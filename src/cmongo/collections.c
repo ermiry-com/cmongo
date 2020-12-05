@@ -19,7 +19,7 @@ int mongo_collection_drop (mongoc_collection_t *collection) {
 
 	int retval = 1;
 
-	bson_error_t error;
+	bson_error_t error = { 0 };
 	if (mongoc_collection_drop (collection, &error)) {
 		retval = 0;
 	}
