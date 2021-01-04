@@ -31,6 +31,12 @@ typedef struct CMongoSelect {
 
 } CMongoSelect;
 
+#define cmongo_select_for_each(select)						\
+	for (CMongoSelectField *field = select->start; field; field = field->next)
+
+#define cmongo_select_for_each_backwards(select)			\
+	for (CMongoSelectField *field = select->end; field; field = field->prev)
+
 CMONGO_EXPORT CMongoSelect *cmongo_select_new (void);
 
 CMONGO_EXPORT bool cmongo_select_is_empty (
@@ -39,6 +45,17 @@ CMONGO_EXPORT bool cmongo_select_is_empty (
 
 CMONGO_EXPORT bool cmongo_select_is_not_empty (
 	const CMongoSelect *select
+);
+
+// adds a new field to the select list
+// returns 0 on success, 1 on error
+CMONGO_EXPORT int cmongo_select_insert_field (
+	CMongoSelect *select,
+	CMongoSelectField *field
+);
+
+CMONGO_EXPORT void cmongo_select_delete (
+	void *cmongo_select_ptr
 );
 
 #endif
