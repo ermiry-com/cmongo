@@ -1,14 +1,12 @@
 #ifndef _CMONGO_MONGO_H_
 #define _CMONGO_MONGO_H_
 
-#include <mongoc/mongoc.h>
 #include <bson/bson.h>
-
-#include <clibs/types/string.h>
+#include <mongoc/mongoc.h>
 
 extern mongoc_client_t *client;
 
-extern String *db_name;
+extern char *db_name;
 
 typedef enum MongoStatus {
 
