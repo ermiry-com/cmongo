@@ -14,10 +14,6 @@ INCDIR      := include
 BUILDDIR    := objs
 TARGETDIR   := bin
 
-TESTDIR		:= test
-TESTBUILD	:= $(TESTDIR)/objs
-TESTTARGET	:= $(TESTDIR)/bin
-
 SRCEXT      := c
 DEPEXT      := d
 OBJEXT      := o
@@ -27,14 +23,8 @@ LIB         := -L /usr/local/lib $(MONGOC) $(CLIBS)
 INC         := -I $(INCDIR) -I /usr/local/include $(MONGOC_INC)
 INCDEP      := -I $(INCDIR)
 
-TESTFLAGS	:= -g $(DEFINES) -Wno-unknown-pragmas
-TESTLIBS	:= $(LIB) -L ./bin -l cmongo
-
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
-
-TESTMPLES	:= $(shell find $(TESTDIR) -type f -name *.$(SRCEXT))
-TESTOBJS	:= $(patsubst $(TESTDIR)/%,$(TESTBUILD)/%,$(TESTMPLES:.$(SRCEXT)=.$(OBJEXT)))
 
 all: directories $(SLIB)
 
@@ -53,8 +43,6 @@ directories:
 clean:
 	@$(RM) -rf $(BUILDDIR) 
 	@$(RM) -rf $(TARGETDIR)
-	@$(RM) -rf $(TESTBUILD)
-	@$(RM) -rf $(TESTTARGET)
 
 # pull in dependency info for *existing* .o files
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
@@ -72,23 +60,4 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@sed -e 's/.*://' -e 's/\\$$//' < $(BUILDDIR)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(BUILDDIR)/$*.$(DEPEXT)
 	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
 
-test: $(TESTOBJS)
-	@mkdir -p ./$(TESTTARGET)
-	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/avl_test.o ./$(TESTBUILD)/user.o $(LIB) -L ./$(TARGETDIR) -l cmongo -o ./$(TESTTARGET)/avl_test
-	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/c_strings.o $(LIB) -L ./$(TARGETDIR) -l cmongo -o ./$(TESTTARGET)/c_strings
-	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/dlist_test.o $(LIB) -L ./$(TARGETDIR) -l cmongo -o ./$(TESTTARGET)/dlist_test
-	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/htab_test.o $(LIB) -L ./$(TARGETDIR) -l cmongo -o ./$(TESTTARGET)/htab_test
-	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/queue_test.o $(LIB) -L ./$(TARGETDIR) -l cmongo -o ./$(TESTTARGET)/queue_test
-	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/thpool_test.o $(LIB) -L ./$(TARGETDIR) -l cmongo -o ./$(TESTTARGET)/thpool_test
-
-# compile tests
-$(TESTBUILD)/%.$(OBJEXT): $(TESTDIR)/%.$(SRCEXT)
-	@mkdir -p $(dir $@)
-	$(CC) $(TESTFLAGS) $(INC) $(TESTLIBS) -c -o $@ $<
-	@$(CC) $(TESTFLAGS) $(INCDEP) -MM $(TESTDIR)/$*.$(SRCEXT) > $(TESTBUILD)/$*.$(DEPEXT)
-	@cp -f $(TESTBUILD)/$*.$(DEPEXT) $(TESTBUILD)/$*.$(DEPEXT).tmp
-	@sed -e 's|.*:|$(TESTBUILD)/$*.$(OBJEXT):|' < $(TESTBUILD)/$*.$(DEPEXT).tmp > $(TESTBUILD)/$*.$(DEPEXT)
-	@sed -e 's/.*://' -e 's/\\$$//' < $(TESTBUILD)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(TESTBUILD)/$*.$(DEPEXT)
-	@rm -f $(TESTBUILD)/$*.$(DEPEXT).tmp
-
-.PHONY: all clean test
+.PHONY: all clean
