@@ -1,15 +1,14 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <mongoc/mongoc.h>
-
-#include <clibs/utils/log.h>
 
 #include "cmongo/mongo.h"
 
 // opens handle to a mongo collection in the db
 mongoc_collection_t *mongo_collection_get (const char *coll_name) {
 
-	return mongoc_client_get_collection (client, db_name->str, coll_name);
+	return mongoc_client_get_collection (client, db_name, coll_name);
 
 }
 
@@ -25,7 +24,11 @@ int mongo_collection_drop (mongoc_collection_t *collection) {
 	}
 
 	else {
-		clibs_log_error ("Failed to drop collection - %s", error.message);
+		(void) fprintf (
+			stderr,
+			"[MONGO][ERROR]: Failed to drop collection - %s\n",
+			error.message
+		);
 	}
 
 	return retval;
