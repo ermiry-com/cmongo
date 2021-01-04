@@ -4,7 +4,7 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
-#include <clibs/collections/dlist.h>
+#include "cmongo/select.h"
 
 // counts the docs in a collection by a matching query
 extern int64_t mongo_count_docs (
@@ -19,16 +19,17 @@ extern bool mongo_check (
 // generates an opts doc that can be used to better work with find methods
 // primarily used to query with projection (select) options
 extern bson_t *mongo_find_generate_opts (
-	const DoubleList *select
+	const CMongoSelect *select
 );
 
 // use a query to find all matching documents
-// select is a dlist of strings used for document projection, _id is true by default and should not be incldued
+// select is a dlist of strings used for document projection,
+// _id is true by default and should not be incldued
 // returns a cursor (should be destroyed) that can be used to traverse the matching documents
 // query gets destroyed, select list remains the same
 extern mongoc_cursor_t *mongo_find_all_cursor (
 	mongoc_collection_t *collection, 
-	bson_t *query, const DoubleList *select,
+	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 );
 
@@ -43,7 +44,7 @@ extern mongoc_cursor_t *mongo_find_all_cursor_with_opts (
 // an empty query will return all the docs in a collection
 extern const bson_t **mongo_find_all (
 	mongoc_collection_t *collection, 
-	bson_t *query, const DoubleList *select,
+	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 );
 
@@ -60,11 +61,12 @@ extern const bson_t *mongo_find_one_with_opts (
 );
 
 // uses a query to find one doc
-// select is a dlist of strings used for document projection, _id is true by default and should not be incldued
+// select is a dlist of strings used for document projection,
+// _id is true by default and should not be incldued
 // query gets destroyed, select list remains the same
 extern const bson_t *mongo_find_one (
 	mongoc_collection_t *collection,
-	bson_t *query, const DoubleList *select
+	bson_t *query, const CMongoSelect *select
 );
 
 // inserts a document into a collection
@@ -75,6 +77,7 @@ extern int mongo_insert_one (
 );
 
 // inserts many documents into a collection
+// docs are NOT deleted after the operation
 // returns 0 on success, 1 on error
 extern int mongo_insert_many (
 	mongoc_collection_t *collection,
