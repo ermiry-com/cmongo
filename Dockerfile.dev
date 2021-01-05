@@ -1,18 +1,4 @@
-FROM gcc as builder
-
-WORKDIR /opt
-
-RUN apt-get update && apt-get install -y cmake libssl-dev
-
-# mongo c driver
-ARG MONGOC_VERSION=1.17.3
-
-RUN wget -q https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz \
-    && tar xzf mongo-c-driver-${MONGOC_VERSION}.tar.gz \
-    && cd mongo-c-driver-${MONGOC_VERSION} \
-    && mkdir cmake-build && cd cmake-build \
-    && cmake -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -D CMAKE_BUILD_TYPE=Release -D ENABLE_SSL=OPENSSL -D ENABLE_SRV=ON .. \
-    && make -j4 && make install
+FROM ermiry/mongoc:buildev as builder
 
 # cmongo
 WORKDIR /opt/cmongo
