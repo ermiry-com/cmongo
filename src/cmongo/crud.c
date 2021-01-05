@@ -7,6 +7,11 @@
 
 #include "cmongo/select.h"
 
+#ifdef __cplusplus
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
 // counts the docs in a collection by a matching query
 int64_t mongo_count_docs (
 	mongoc_collection_t *collection, bson_t *query
@@ -403,3 +408,7 @@ int mongo_delete_many (
 	return retval;
 
 }
+
+#ifdef __cplusplus
+#pragma GCC diagnostic pop
+#endif
