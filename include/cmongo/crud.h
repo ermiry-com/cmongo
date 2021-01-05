@@ -6,6 +6,10 @@
 
 #include "cmongo/select.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // counts the docs in a collection by a matching query
 extern int64_t mongo_count_docs (
 	mongoc_collection_t *collection, bson_t *query
@@ -113,5 +117,9 @@ extern int mongo_delete_one (
 extern int mongo_delete_many (
 	mongoc_collection_t *collection, bson_t *query
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -7,6 +7,10 @@
 
 #define CMONGO_SELECT_FIELD_LEN			256
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct CMongoSelectField {
 
 	struct CMongoSelectField *prev;
@@ -57,5 +61,9 @@ CMONGO_EXPORT int cmongo_select_insert_field (
 CMONGO_EXPORT void cmongo_select_delete (
 	void *cmongo_select_ptr
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

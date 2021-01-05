@@ -3,11 +3,23 @@
 
 #include <mongoc/mongoc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // opens handle to a mongo collection in the db
-extern mongoc_collection_t *mongo_collection_get (const char *coll_name);
+extern mongoc_collection_t *mongo_collection_get (
+	const char *coll_name
+);
 
 // drops a collection deleting all of its data
 // retuns 0 on success, 1 on error
-extern int mongo_collection_drop (mongoc_collection_t *collection);
+extern int mongo_collection_drop (
+	mongoc_collection_t *collection
+);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

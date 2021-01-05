@@ -4,6 +4,10 @@
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern mongoc_client_t *client;
 
 extern char *db_name;
@@ -33,11 +37,11 @@ extern void mongo_set_uri (const char *uri);
 
 // generates a new uri string with the set values (username, password, host, port & db name)
 // that can be used to set as the uri for a new connection
-// returns the newly uri string (that should be freed) on success, NULL on error
+// returns the newly uri string (that should be freed) on success
+// returns NULL on error
 extern char *mongo_uri_generate (void);
 
 // pings the db to test for a success connection
-// Possible connection problems -- failed to authenticate to the db
 // returns 0 on success, 1 on error
 extern int mongo_ping_db (void);
 
@@ -46,5 +50,9 @@ extern int mongo_connect (void);
 
 // disconnects from the db
 extern void mongo_disconnect (void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

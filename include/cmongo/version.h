@@ -7,6 +7,10 @@
 #define CMONGO_VERSION_TIME					"18:21 CST"
 #define CMONGO_VERSION_AUTHOR				"Erick Salas"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // print full cmongo version information
 extern void cmongo_version_print_full (void);
 
@@ -15,5 +19,9 @@ extern void cmongo_version_print_version_id (void);
 
 // print the version name
 extern void cmongo_version_print_version_name (void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
