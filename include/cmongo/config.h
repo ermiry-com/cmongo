@@ -4,7 +4,7 @@
 // to be used in the application
 #define CMONGO_EXPORT 			extern
 
-// to be used by internal cerver methods
+// to be used by internal cmongo methods
 #define CMONGO_PRIVATE			extern
 
 // used by private methods but can be used by the application
