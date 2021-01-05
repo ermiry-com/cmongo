@@ -1,0 +1,27 @@
+name: CMongo Beta Integration
+
+on:
+  push:
+    branches:
+      - '*beta'
+      - '!main'
+  pull_request:
+    branches:
+      - '*beta'
+      - '!main'
+
+jobs:
+  build:
+    name: CMongo beta build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: gcc make
+        run: make TYPE=test
+
+      - name: clean
+        run: make clean
+
+      - name: g++ make
+        run: make TYPE=test CC=g++
