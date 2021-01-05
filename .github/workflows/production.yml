@@ -12,6 +12,8 @@ jobs:
   build:
     name: CMongo production build
     runs-on: ubuntu-latest
+    container:
+      image: ermiry/mongoc:builder
     steps:
       - uses: actions/checkout@v2
 
