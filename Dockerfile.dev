@@ -14,6 +14,11 @@ RUN wget -q https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC
     && cmake -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -D CMAKE_BUILD_TYPE=Release -D ENABLE_SSL=OPENSSL -D ENABLE_SRV=ON .. \
     && make -j4 && make install
 
+# cmongo
+WORKDIR /opt/cmongo
+COPY . .
+RUN make -j4
+
 ############
 FROM ubuntu:bionic
 
@@ -28,6 +33,10 @@ COPY --from=builder /usr/lib/x86_64-linux-gnu/libicuuc.so.63 /usr/lib/x86_64-lin
 COPY --from=builder /usr/local/include/ /usr/local/include/
 COPY --from=builder /usr/local/lib/libmongoc-1.0.so /usr/local/lib/libmongoc-1.0.so
 COPY --from=builder /usr/local/lib/libbson-1.0.so /usr/local/lib/libbson-1.0.so
+
+# cmongo
+COPY --from=builder /opt/cmongo/bin/libcmongo.so /usr/local/lib/
+COPY --from=builder /opt/cmongo/include/cmongo /usr/local/include/cmongo
 
 RUN ldconfig
 
