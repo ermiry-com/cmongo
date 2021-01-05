@@ -1,0 +1,30 @@
+name: CMongo Continuous Integration
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+      - '*beta'
+  pull_request:
+    branches-ignore:
+      - 'main'
+      - '*beta'
+
+jobs:
+  build:
+    name: CMongo build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: System Information
+        run: gcc --version && g++ --version
+
+      - name: gcc make
+        run: make
+      
+      - name: clean
+        run: make clean
+
+      - name: g++ make
+        run: make CC=g++
