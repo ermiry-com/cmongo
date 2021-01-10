@@ -34,7 +34,7 @@ COMMON		:= -march=native \
 CFLAGS      := $(DEFINES)
 
 ifeq ($(TYPE), development)
-	CFLAGS += -g -fasynchronous-unwind-tables $(DEVELOPMENT)
+	CFLAGS += -g -fasynchronous-unwind-tables
 else ifeq ($(TYPE), test)
 	CFLAGS += -g -fasynchronous-unwind-tables -D_FORTIFY_SOURCE=2 -fstack-protector -O2
 else
