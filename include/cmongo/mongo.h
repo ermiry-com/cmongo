@@ -4,6 +4,8 @@
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
+#include "cmongo/config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,37 +21,37 @@ typedef enum MongoStatus {
 
 } MongoStatus;
 
-extern MongoStatus mongo_get_status (void);
+CMONGO_EXPORT MongoStatus mongo_get_status (void);
 
-extern void mongo_set_host (const char *h);
+CMONGO_EXPORT void mongo_set_host (const char *h);
 
-extern void mongo_set_port (const char *p);
+CMONGO_EXPORT void mongo_set_port (const char *p);
 
-extern void mongo_set_username (const char *u);
+CMONGO_EXPORT void mongo_set_username (const char *u);
 
-extern void mongo_set_password (const char *pswd);
+CMONGO_EXPORT void mongo_set_password (const char *pswd);
 
-extern void mongo_set_db_name (const char *name);
+CMONGO_EXPORT void mongo_set_db_name (const char *name);
 
-extern void mongo_set_app_name (const char *name);
+CMONGO_EXPORT void mongo_set_app_name (const char *name);
 
-extern void mongo_set_uri (const char *uri);
+CMONGO_EXPORT void mongo_set_uri (const char *uri);
 
 // generates a new uri string with the set values (username, password, host, port & db name)
 // that can be used to set as the uri for a new connection
 // returns the newly uri string (that should be freed) on success
 // returns NULL on error
-extern char *mongo_uri_generate (void);
+CMONGO_EXPORT char *mongo_uri_generate (void);
 
 // pings the db to test for a success connection
 // returns 0 on success, 1 on error
-extern int mongo_ping_db (void);
+CMONGO_EXPORT int mongo_ping_db (void);
 
 // connect to the mongo db with db name
-extern int mongo_connect (void);
+CMONGO_EXPORT int mongo_connect (void);
 
 // disconnects from the db
-extern void mongo_disconnect (void);
+CMONGO_EXPORT void mongo_disconnect (void);
 
 #ifdef __cplusplus
 }
