@@ -3,15 +3,17 @@
 
 #include <bson/bson.h>
 
+#include "cmongo/config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern bson_oid_t *bson_oid_new (void);
+CMONGO_PUBLIC bson_oid_t *bson_oid_new (void);
 
-extern void bson_oid_delete (void *bson_oid_t_ptr);
+CMONGO_PUBLIC void bson_oid_delete (void *bson_oid_t_ptr);
 
-extern bson_oid_t *bson_oid_create (
+CMONGO_PUBLIC bson_oid_t *bson_oid_create (
 	const bson_oid_t *original_oid
 );
 

@@ -1,0 +1,29 @@
+name: CMongo Version Check
+
+on:
+  push:
+    branches:
+      - '*beta'
+      - 'main'
+  pull_request:
+    branches:
+      - '*beta'
+      - 'main'
+
+jobs:
+  build:
+    name: CMongo build
+    runs-on: ubuntu-latest
+    container:
+      image: ermiry/mongoc:buildev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: gcc make
+        run: make
+      - name: gcc tests
+        run: make test
+
+      - name: Check version
+        run: LD_LIBRARY_PATH=bin ./test/bin/version
