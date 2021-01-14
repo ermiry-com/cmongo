@@ -78,9 +78,12 @@ bson_t *mongo_find_generate_opts (
 
 			(void) bson_append_bool (&projection_doc, "_id", -1, true);
 
-			cmongo_select_for_each (select) {
+			for (size_t idx = 0; idx < select->n_fields; idx++) {
 				(void) bson_append_bool (
-					&projection_doc, field->value, field->len, true
+					&projection_doc,
+					select->fields[idx].value,
+					select->fields[idx].len,
+					true
 				);
 			}
 
