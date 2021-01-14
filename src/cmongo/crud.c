@@ -5,6 +5,7 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
+#include "cmongo/crud.h"
 #include "cmongo/select.h"
 
 #ifdef __cplusplus
@@ -205,65 +206,87 @@ void mongo_find_all_destroy_docs (
 
 }
 
-static void mongo_find_one_internal (
+static unsigned int mongo_find_one_internal (
 	mongoc_collection_t *collection,
 	bson_t *query, const bson_t *opts,
-	const bson_t **doc
+	void *model, const mongo_parser model_parser
 ) {
+
+	unsigned int retval = 1;
 
 	mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
 		collection, query, opts, NULL
 	);
 
-	(void) mongoc_cursor_set_limit (cursor, 1);
+	if (cursor) {
+		(void) mongoc_cursor_set_limit (cursor, 1);
 
-	(void) mongoc_cursor_next (cursor, doc);
+		const bson_t *doc = NULL;
+		if (mongoc_cursor_next (cursor, &doc)) {
+			model_parser (model, doc);
+			retval = 0;
+		}
 
-	mongoc_cursor_destroy (cursor);
+		mongoc_cursor_destroy (cursor);
+	}
+
+	return retval;
 
 }
 
 // uses a query to find one doc with the specified options
 // query gets destroyed, opts are kept the same
-const bson_t *mongo_find_one_with_opts (
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one_with_opts (
 	mongoc_collection_t *collection,
-	bson_t *query, const bson_t *opts
+	bson_t *query, const bson_t *opts,
+	void *model, const mongo_parser model_parser
 ) {
 
-	const bson_t *doc = NULL;
+	unsigned int retval = 1;
 
-	if (collection && query) {
-		mongo_find_one_internal (collection, query, opts, &doc);
+	if (collection && query && model && model_parser) {
+		retval = mongo_find_one_internal (
+			collection,
+			query, opts,
+			model, model_parser
+		);
 
 		bson_destroy (query);
 	}
 
-	return doc;
+	return retval;
 
 }
 
 // uses a query to find one doc
 // select is a dlist of strings used for document projection,
 // _id is true by default and should not be incldued
-// query gets destroyed, select list remains the same
-const bson_t *mongo_find_one (
+// query gets destroyed, select structure remains the same
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one (
 	mongoc_collection_t *collection,
-	bson_t *query, const CMongoSelect *select
+	bson_t *query, const CMongoSelect *select,
+	void *model, const mongo_parser model_parser
 ) {
 
-	const bson_t *doc = NULL;
+	unsigned int retval = 1;
 
-	if (collection && query) {
+	if (collection && query && model && model_parser) {
 		bson_t *opts = mongo_find_generate_opts (select);
 
-		mongo_find_one_internal (collection, query, opts, &doc);
+		retval = mongo_find_one_internal (
+			collection,
+			query, opts,
+			model, model_parser
+		);
 
 		if (opts) bson_destroy (opts);
 
 		bson_destroy (query);
 	}
 
-	return doc;
+	return retval;
 
 }
 

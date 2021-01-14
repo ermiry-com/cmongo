@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+typedef void (*mongo_parser)(void *model, const bson_t *doc);
+
 // counts the docs in a collection by a matching query
 extern int64_t mongo_count_docs (
 	mongoc_collection_t *collection, bson_t *query
@@ -59,18 +61,22 @@ extern void mongo_find_all_destroy_docs (
 
 // uses a query to find one doc with the specified options
 // query gets destroyed, opts are kept the same
-extern const bson_t *mongo_find_one_with_opts (
+// returns 0 on success, 1 on error
+extern unsigned int mongo_find_one_with_opts (
 	mongoc_collection_t *collection,
-	bson_t *query, const bson_t *opts
+	bson_t *query, const bson_t *opts,
+	void *model, const mongo_parser model_parser
 );
 
 // uses a query to find one doc
 // select is a dlist of strings used for document projection,
 // _id is true by default and should not be incldued
-// query gets destroyed, select list remains the same
-extern const bson_t *mongo_find_one (
+// query gets destroyed, select structure remains the same
+// returns 0 on success, 1 on error
+extern unsigned int mongo_find_one (
 	mongoc_collection_t *collection,
-	bson_t *query, const CMongoSelect *select
+	bson_t *query, const CMongoSelect *select,
+	void *model, const mongo_parser model_parser
 );
 
 // inserts a document into a collection
