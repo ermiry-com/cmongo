@@ -9,6 +9,8 @@ jobs:
   coverage:
     name: CMongo coverage
     runs-on: ubuntu-latest
+    container:
+      image: ermiry/mongoc:buildev
     steps:
       - name: Checkout
         uses: actions/checkout@v2
