@@ -9,104 +9,110 @@
 
 #include "cmongo/mongo.h"
 
-static MongoStatus status = MONGO_STATUS_DISCONNECTED;
+static Mongo mongo = { 0 };
 
-MongoStatus mongo_get_status (void) { return status; }
+MongoStatus mongo_get_status (void) { return mongo.status; }
 
-static mongoc_uri_t *uri = NULL;
-mongoc_client_t *client = NULL;
-static mongoc_database_t *database = NULL;
+void mongo_set_db_name (const char *db_name) {
 
-static char *host = NULL;
+	if (db_name) {
+		(void) strncpy (mongo.db_name, db_name, CMONGO_DB_NAME_SIZE - 1);
+		mongo.db_name_len = strlen (mongo.db_name);
+	}
 
-void mongo_set_host (const char *h) {
+}
+
+void mongo_set_host (const char *host) {
 	
-	if (h) host = strdup (h);
+	if (host) {
+		(void) strncpy (mongo.host, host, CMONGO_HOST_SIZE - 1);
+		mongo.host_len = strlen (mongo.host);
+	}
 	
 }
 
-static char *port = NULL;
-
-void mongo_set_port (const char *p) {
+void mongo_set_port (const unsigned int port) {
 	
-	if (p) port = strdup (p);
+	mongo.port = port;
 	
 }
 
-static char *username = NULL;
-
-void mongo_set_username (const char *u) {
+void mongo_set_username (const char *username) {
 	
-	if (u) username = strdup (u);
+	if (username) {
+		(void) strncpy (mongo.username, username, CMONGO_USERNAME_SIZE - 1);
+		mongo.username_len = strlen (mongo.username);
+	}
 	
 }
-
-static char *password = NULL;
 
 void mongo_set_password (const char *pswd) {
 	
-	if (pswd) password = strdup (pswd);
+	if (pswd) {
+		(void) strncpy (mongo.password, pswd, CMONGO_PASSWORD_SIZE - 1);
+		mongo.password_len = strlen (mongo.password);
+	}
 	
 }
 
-char *db_name = NULL;
+void mongo_set_app_name (const char *app_name) {
 
-void mongo_set_db_name (const char *name) {
-
-	if (name) db_name = strdup (name);
-
-}
-
-static char *app_name = NULL;
-
-void mongo_set_app_name (const char *name) {
-
-	if (name) app_name = strdup (name);
+	if (app_name) {
+		(void) strncpy (mongo.app_name, app_name, CMONGO_APP_NAME_SIZE - 1);
+		mongo.app_name_len = strlen (mongo.app_name);
+	}
 
 }
-
-static char *uri_string = NULL;
 
 void mongo_set_uri (const char *uri) {
 
-	if (uri) uri_string = strdup (uri);
+	if (uri) {
+		(void) strncpy (mongo.uri, uri, CMONGO_URI_SIZE - 1);
+		mongo.uri_len = strlen (mongo.uri);
+	}
 
 }
 
-// generates a new uri string with the set values (username, password, host, port & db name)
+// generates a new uri string with the set values
+// (username, password, host, port & db name)
 // that can be used to set as the uri for a new connection
-// returns the newly uri string (that should be freed) on success, NULL on error
-char *mongo_uri_generate (void) {
+// returns 0 on success 1 on error
+unsigned int mongo_uri_generate (void) {
 
-	char *retval = NULL;
+	unsigned int retval = 1;
 
-	if (host && port && db_name) {
-		char buffer[512] = { 0 };
-		if (username && password) {
+	if (
+		mongo.host_len
+		&& mongo.port
+		&& mongo.db_name_len
+	) {
+		if (mongo.username_len && mongo.password_len) {
 			(void) snprintf (
-				buffer, 512,
-				"mongodb://%s:%s@%s:%s/%s", 
-				username, password, 
-				host, port,
-				db_name
+				mongo.uri, CMONGO_URI_SIZE - 1,
+				"mongodb://%s:%s@%s:%u/%s", 
+				mongo.username, mongo.password, 
+				mongo.host, mongo.port,
+				mongo.db_name
 			);
 		}
 
 		else {
 			(void) snprintf (
-				buffer, 512,
+				mongo.uri, CMONGO_URI_SIZE - 1,
 				"mongodb://%s:%s/%s", 
-				host, port,
-				db_name
+				mongo.host, mongo.port,
+				mongo.db_name
 			);
 		}
-
-		retval = strdup (buffer);
 	}
 
 	return retval;
 
 }
+
+static mongoc_uri_t *uri = NULL;
+mongoc_client_t *client = NULL;
+static mongoc_database_t *database = NULL;
 
 // pings the db to test for a success connection
 // Possible connection problems -- failed to authenticate to the db
