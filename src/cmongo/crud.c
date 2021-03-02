@@ -16,6 +16,30 @@
 #endif
 
 // counts the docs in a collection by a matching query
+static int64_t mongo_count_docs_internal (
+	mongoc_collection_t *collection, bson_t *query
+) {
+
+	int64_t retval = 0;
+
+	bson_error_t error = { 0 };
+	retval = mongoc_collection_count_documents (
+		collection, query, NULL, NULL, NULL, &error
+	);
+
+	if (retval < 0) {
+		(void) fprintf (
+			stderr, "[MONGO][ERROR]: %s", error.message
+		);
+
+		retval = 0;
+	}
+
+	return retval;
+
+}
+
+// counts the docs in a collection by a matching query
 int64_t mongo_count_docs (
 	const CMongoModel *model, bson_t *query
 ) {
@@ -30,18 +54,9 @@ int64_t mongo_count_docs (
 			);
 
 			if (collection) {
-				bson_error_t error = { 0 };
-				retval = mongoc_collection_count_documents (
-					collection, query, NULL, NULL, NULL, &error
+				retval = mongo_count_docs_internal (
+					collection, query
 				);
-
-				if (retval < 0) {
-					(void) fprintf (
-						stderr, "[MONGO][ERROR]: %s", error.message
-					);
-
-					retval = 0;
-				}
 
 				mongoc_collection_destroy (collection);
 			}
@@ -146,7 +161,10 @@ mongoc_cursor_t *mongo_find_all_cursor (
 			);
 
 			if (collection) {
-				uint64_t count = mongo_count_docs (collection, bson_copy (query));
+				uint64_t count = mongo_count_docs_internal (
+					collection, bson_copy (query)
+				);
+
 				if (count > 0) {
 					bson_t *opts = mongo_find_generate_opts (select);
 
@@ -213,7 +231,7 @@ const bson_t **mongo_find_all_internal (
 
 	const bson_t **retval = NULL;
 
-	uint64_t count = mongo_count_docs (collection, bson_copy (query));
+	uint64_t count = mongo_count_docs_internal (collection, bson_copy (query));
 	if (count > 0) {
 		retval = (const bson_t **) calloc (count, sizeof (bson_t *));
 		for (uint64_t i = 0; i < count; i++) retval[i] = bson_new ();
