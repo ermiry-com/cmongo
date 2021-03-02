@@ -49,6 +49,8 @@ typedef struct Mongo {
 	size_t uri_len;
 	char uri[CMONGO_URI_SIZE];
 
+	mongoc_client_pool_t *pool;
+
 } Mongo;
 
 CMONGO_EXPORT void mongo_set_db_name (const char *db_name);
@@ -71,12 +73,12 @@ CMONGO_EXPORT void mongo_set_uri (const char *uri);
 // returns 0 on success 1 on error
 CMONGO_EXPORT unsigned int mongo_uri_generate (void);
 
+// connect to the mongo db with db name
+CMONGO_EXPORT unsigned int mongo_connect (void);
+
 // pings the db to test for a success connection
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_ping_db (void);
-
-// connect to the mongo db with db name
-CMONGO_EXPORT int mongo_connect (void);
+CMONGO_EXPORT unsigned int mongo_ping_db (void);
 
 // disconnects from the db
 CMONGO_EXPORT void mongo_disconnect (void);
