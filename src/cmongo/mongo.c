@@ -9,7 +9,7 @@
 
 #include "cmongo/mongo.h"
 
-static Mongo mongo = { 0 };
+Mongo mongo = { 0 };
 
 MongoStatus mongo_get_status (void) { return mongo.status; }
 
@@ -101,7 +101,7 @@ unsigned int mongo_uri_generate (void) {
 		else {
 			mongo.uri_len = snprintf (
 				mongo.uri, CMONGO_URI_SIZE - 1,
-				"mongodb://%s:%s/%s",
+				"mongodb://%s:%u/%s",
 				mongo.host, mongo.port,
 				mongo.db_name
 			);
