@@ -9,11 +9,6 @@
 extern "C" {
 #endif
 
-// opens handle to a mongo collection in the db
-CMONGO_EXPORT mongoc_collection_t *mongo_collection_get (
-	const char *coll_name
-);
-
 // drops a collection deleting all of its data
 // retuns 0 on success, 1 on error
 CMONGO_EXPORT int mongo_collection_drop (

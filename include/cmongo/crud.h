@@ -1,25 +1,24 @@
 #ifndef _CMONGO_CRUD_H_
 #define _CMONGO_CRUD_H_
 
-#include <mongoc/mongoc.h>
 #include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
+#include "cmongo/model.h"
 #include "cmongo/select.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*mongo_parser)(void *model, const bson_t *doc);
-
 // counts the docs in a collection by a matching query
 CMONGO_EXPORT int64_t mongo_count_docs (
-	mongoc_collection_t *collection, bson_t *query
+	const CMongoModel *model, bson_t *query
 );
 
 // returns true if 1 or more documents matches the query, false if no matches
 CMONGO_EXPORT bool mongo_check (
-	mongoc_collection_t *collection, bson_t *query
+	const CMongoModel *model, bson_t *query
 );
 
 // generates an opts doc that can be used to better work with find methods
@@ -34,7 +33,7 @@ CMONGO_EXPORT bson_t *mongo_find_generate_opts (
 // returns a cursor (should be destroyed) that can be used to traverse the matching documents
 // query gets destroyed, select list remains the same
 CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor (
-	mongoc_collection_t *collection, 
+	const CMongoModel *model, 
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 );
@@ -42,14 +41,14 @@ CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor (
 // uses a query to find all matching docs with the specified options
 // query gets destroyed, options remain the same
 CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor_with_opts (
-	mongoc_collection_t *collection, 
+	const CMongoModel *model, 
 	bson_t *query, const bson_t *opts
 );
 
 // use a query to find all matching documents
 // an empty query will return all the docs in a collection
 CMONGO_EXPORT const bson_t **mongo_find_all (
-	mongoc_collection_t *collection, 
+	const CMongoModel *model, 
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 );
@@ -63,9 +62,9 @@ CMONGO_EXPORT void mongo_find_all_destroy_docs (
 // query gets destroyed, opts are kept the same
 // returns 0 on success, 1 on error
 CMONGO_EXPORT unsigned int mongo_find_one_with_opts (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const bson_t *opts,
-	void *model, const mongo_parser model_parser
+	void *output
 );
 
 // uses a query to find one doc
@@ -74,54 +73,54 @@ CMONGO_EXPORT unsigned int mongo_find_one_with_opts (
 // query gets destroyed, select structure remains the same
 // returns 0 on success, 1 on error
 CMONGO_EXPORT unsigned int mongo_find_one (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const CMongoSelect *select,
-	void *model, const mongo_parser model_parser
+	void *output
 );
 
 // inserts a document into a collection
 // destroys document
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_insert_one (
-	mongoc_collection_t *collection, bson_t *doc
+CMONGO_EXPORT unsigned int mongo_insert_one (
+	const CMongoModel *model, bson_t *doc
 );
 
 // inserts many documents into a collection
 // docs are NOT deleted after the operation
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_insert_many (
-	mongoc_collection_t *collection,
+CMONGO_EXPORT unsigned int mongo_insert_many (
+	const CMongoModel *model,
 	const bson_t **docs, size_t n_docs
 );
 
 // updates a doc by a matching query with the new values
 // destroys query and update documents
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_update_one (
-	mongoc_collection_t *collection,
+CMONGO_EXPORT unsigned int mongo_update_one (
+	const CMongoModel *model,
 	bson_t *query, bson_t *update
 );
 
 // updates all the query matching documents
 // destroys the query and the update documents
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_update_many (
-	mongoc_collection_t *collection,
+CMONGO_EXPORT unsigned int mongo_update_many (
+	const CMongoModel *model,
 	bson_t *query, bson_t *update
 );
 
 // deletes one matching document by a query
 // destroys the query document
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_delete_one (
-	mongoc_collection_t *collection, bson_t *query
+CMONGO_EXPORT unsigned int mongo_delete_one (
+	const CMongoModel *model, bson_t *query
 );
 
 // deletes all the query matching documents
 // destroys the query
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_delete_many (
-	mongoc_collection_t *collection, bson_t *query
+CMONGO_EXPORT unsigned int mongo_delete_many (
+	const CMongoModel *model, bson_t *query
 );
 
 #ifdef __cplusplus
