@@ -62,9 +62,9 @@ CMONGO_EXPORT void mongo_find_all_destroy_docs (
 // query gets destroyed, opts are kept the same
 // returns 0 on success, 1 on error
 CMONGO_EXPORT unsigned int mongo_find_one_with_opts (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const bson_t *opts,
-	void *model, const mongo_parser model_parser
+	void *output
 );
 
 // uses a query to find one doc
@@ -73,9 +73,9 @@ CMONGO_EXPORT unsigned int mongo_find_one_with_opts (
 // query gets destroyed, select structure remains the same
 // returns 0 on success, 1 on error
 CMONGO_EXPORT unsigned int mongo_find_one (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const CMongoSelect *select,
-	void *model, const mongo_parser model_parser
+	void *output
 );
 
 // inserts a document into a collection

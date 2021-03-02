@@ -316,7 +316,7 @@ void mongo_find_all_destroy_docs (
 static unsigned int mongo_find_one_internal (
 	mongoc_collection_t *collection,
 	bson_t *query, const bson_t *opts,
-	void *model, const mongo_parser model_parser
+	void *output, const mongo_parser model_parser
 ) {
 
 	unsigned int retval = 1;
@@ -330,7 +330,7 @@ static unsigned int mongo_find_one_internal (
 
 		const bson_t *doc = NULL;
 		if (mongoc_cursor_next (cursor, &doc)) {
-			model_parser (model, doc);
+			model_parser (output, doc);
 			retval = 0;
 		}
 
@@ -345,19 +345,32 @@ static unsigned int mongo_find_one_internal (
 // query gets destroyed, opts are kept the same
 // returns 0 on success, 1 on error
 unsigned int mongo_find_one_with_opts (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const bson_t *opts,
-	void *model, const mongo_parser model_parser
+	void *output
 ) {
 
 	unsigned int retval = 1;
 
-	if (collection && query && model && model_parser) {
-		retval = mongo_find_one_internal (
-			collection,
-			query, opts,
-			model, model_parser
-		);
+	if (model && query && output) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				retval = mongo_find_one_internal (
+					collection,
+					query, opts,
+					output, model->model_parser
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 	}
@@ -372,23 +385,36 @@ unsigned int mongo_find_one_with_opts (
 // query gets destroyed, select structure remains the same
 // returns 0 on success, 1 on error
 unsigned int mongo_find_one (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const CMongoSelect *select,
-	void *model, const mongo_parser model_parser
+	void *output
 ) {
 
 	unsigned int retval = 1;
 
-	if (collection && query && model && model_parser) {
-		bson_t *opts = mongo_find_generate_opts (select);
+	if (model && query && output) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongo_find_one_internal (
-			collection,
-			query, opts,
-			model, model_parser
-		);
+			if (collection) {
+				bson_t *opts = mongo_find_generate_opts (select);
 
-		if (opts) bson_destroy (opts);
+				retval = mongo_find_one_internal (
+					collection,
+					query, opts,
+					output, model->model_parser
+				);
+
+				if (opts) bson_destroy (opts);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 	}
