@@ -81,46 +81,46 @@ CMONGO_EXPORT unsigned int mongo_find_one (
 // inserts a document into a collection
 // destroys document
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_insert_one (
-	mongoc_collection_t *collection, bson_t *doc
+CMONGO_EXPORT unsigned int mongo_insert_one (
+	const CMongoModel *model, bson_t *doc
 );
 
 // inserts many documents into a collection
 // docs are NOT deleted after the operation
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_insert_many (
-	mongoc_collection_t *collection,
+CMONGO_EXPORT unsigned int mongo_insert_many (
+	const CMongoModel *model,
 	const bson_t **docs, size_t n_docs
 );
 
 // updates a doc by a matching query with the new values
 // destroys query and update documents
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_update_one (
-	mongoc_collection_t *collection,
+CMONGO_EXPORT unsigned int mongo_update_one (
+	const CMongoModel *model,
 	bson_t *query, bson_t *update
 );
 
 // updates all the query matching documents
 // destroys the query and the update documents
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_update_many (
-	mongoc_collection_t *collection,
+CMONGO_EXPORT unsigned int mongo_update_many (
+	const CMongoModel *model,
 	bson_t *query, bson_t *update
 );
 
 // deletes one matching document by a query
 // destroys the query document
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_delete_one (
-	mongoc_collection_t *collection, bson_t *query
+CMONGO_EXPORT unsigned int mongo_delete_one (
+	const CMongoModel *model, bson_t *query
 );
 
 // deletes all the query matching documents
 // destroys the query
 // returns 0 on success, 1 on error
-CMONGO_EXPORT int mongo_delete_many (
-	mongoc_collection_t *collection, bson_t *query
+CMONGO_EXPORT unsigned int mongo_delete_many (
+	const CMongoModel *model, bson_t *query
 );
 
 #ifdef __cplusplus

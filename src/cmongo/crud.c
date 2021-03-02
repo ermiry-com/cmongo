@@ -382,18 +382,31 @@ unsigned int mongo_find_one (
 // inserts a document into a collection
 // destroys document
 // returns 0 on success, 1 on error
-int mongo_insert_one (
-	mongoc_collection_t *collection, bson_t *doc
+unsigned int mongo_insert_one (
+	const CMongoModel *model, bson_t *doc
 ) {
 
-	int retval = 1;
+	unsigned int retval = 1;
 
-	if (collection && doc) {
-		bson_error_t error = { 0 };
+	if (model && doc) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongoc_collection_insert_one (
-			collection, doc, NULL, NULL, &error
-		) ? 0 : 1;
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_insert_one (
+					collection, doc, NULL, NULL, &error
+				) ? 0 : 1;
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (doc);
 	}
@@ -405,19 +418,32 @@ int mongo_insert_one (
 // inserts many documents into a collection
 // docs are NOT deleted after the operation
 // returns 0 on success, 1 on error
-int mongo_insert_many (
-	mongoc_collection_t *collection,
+unsigned int mongo_insert_many (
+	const CMongoModel *model,
 	const bson_t **docs, size_t n_docs
 ) {
 
-	int retval = 1;
+	unsigned int retval = 1;
 
-	if (collection && docs) {
-		bson_error_t error = { 0 };
+	if (model && docs) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongoc_collection_insert_many (
-			collection, docs, n_docs, NULL, NULL, &error
-		) ? 0 : 1;
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_insert_many (
+					collection, docs, n_docs, NULL, NULL, &error
+				) ? 0 : 1;
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 	}
 
 	return retval;
@@ -428,19 +454,32 @@ int mongo_insert_many (
 // updates a doc by a matching query with the new values
 // destroys query and update documents
 // returns 0 on success, 1 on error
-int mongo_update_one (
-	mongoc_collection_t *collection,
+unsigned int mongo_update_one (
+	const CMongoModel *model,
 	bson_t *query, bson_t *update
 ) {
 
-	int retval = 1;
+	unsigned int retval = 1;
 
-	if (collection && query && update) {
-		bson_error_t error = { 0 };
+	if (model && query && update) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongoc_collection_update_one (
-			collection, query, update, NULL, NULL, &error
-		) ? 0 : 1;
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_update_one (
+					collection, query, update, NULL, NULL, &error
+				) ? 0 : 1;
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 		bson_destroy (update);
@@ -453,19 +492,32 @@ int mongo_update_one (
 // updates all the query matching documents
 // destroys the query and the update documents
 // returns 0 on success, 1 on error
-int mongo_update_many (
-	mongoc_collection_t *collection,
+unsigned int mongo_update_many (
+	const CMongoModel *model,
 	bson_t *query, bson_t *update
 ) {
 
-	int retval = 0;
+	unsigned int retval = 0;
 
-	if (collection && query && update) {
-		bson_error_t error = { 0 };
+	if (model && query && update) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongoc_collection_update_many (
-			collection, query, update, NULL, NULL, &error
-		) ? 0 : 1;
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_update_many (
+					collection, query, update, NULL, NULL, &error
+				) ? 0 : 1;
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 		bson_destroy (update);
@@ -478,18 +530,31 @@ int mongo_update_many (
 // deletes one matching document by a query
 // destroys the query document
 // returns 0 on success, 1 on error
-int mongo_delete_one (
-	mongoc_collection_t *collection, bson_t *query
+unsigned int mongo_delete_one (
+	const CMongoModel *model, bson_t *query
 ) {
 
-	int retval = 0;
+	unsigned int retval = 0;
 
-	if (collection && query) {
-		bson_error_t error = { 0 };
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongoc_collection_delete_one (
-			collection, query, NULL, NULL, &error
-		) ? 0 : 1;
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_delete_one (
+					collection, query, NULL, NULL, &error
+				) ? 0 : 1;
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 	}
@@ -501,18 +566,31 @@ int mongo_delete_one (
 // deletes all the query matching documents
 // destroys the query
 // returns 0 on success, 1 on error
-int mongo_delete_many (
-	mongoc_collection_t *collection, bson_t *query
+unsigned int mongo_delete_many (
+	const CMongoModel *model, bson_t *query
 ) {
 
-	int retval = 0;
+	unsigned int retval = 0;
 
-	if (collection && query) {
-		bson_error_t error = { 0 };
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
 
-		retval = mongoc_collection_delete_many (
-			collection, query, NULL, NULL, &error
-		) ? 0 : 1;
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_delete_many (
+					collection, query, NULL, NULL, &error
+				) ? 0 : 1;
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 	}
