@@ -32,6 +32,10 @@ CMONGO_EXPORT CMongoModel *cmongo_model_create (
 	const char *collname
 );
 
+CMONGO_EXPORT void cmongo_model_set_parser (
+	CMongoModel *model, const mongo_parser model_parser
+);
+
 #ifdef __cplusplus
 }
 #endif
