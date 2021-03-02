@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <mongoc/mongoc.h>
 #include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 #include "cmongo/crud.h"
+#include "cmongo/model.h"
+#include "cmongo/mongo.h"
 #include "cmongo/select.h"
 
 #ifdef __cplusplus
@@ -15,23 +17,36 @@
 
 // counts the docs in a collection by a matching query
 int64_t mongo_count_docs (
-	mongoc_collection_t *collection, bson_t *query
+	const CMongoModel *model, bson_t *query
 ) {
 
 	int64_t retval = 0;
 
-	if (collection && query) {
-		bson_error_t error = { 0 };
-		retval = mongoc_collection_count_documents (
-			collection, query, NULL, NULL, NULL, &error
-		);
-
-		if (retval < 0) {
-			(void) fprintf (
-				stderr, "[MONGO][ERROR]: %s", error.message
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
 			);
 
-			retval = 0;
+			if (collection) {
+				bson_error_t error = { 0 };
+				retval = mongoc_collection_count_documents (
+					collection, query, NULL, NULL, NULL, &error
+				);
+
+				if (retval < 0) {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s", error.message
+					);
+
+					retval = 0;
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
 		}
 
 		bson_destroy (query);
@@ -44,16 +59,30 @@ int64_t mongo_count_docs (
 // returns true if 1 or more documents matches the query
 // returns false if no matches
 bool mongo_check (
-	mongoc_collection_t *collection, bson_t *query
+	const CMongoModel *model, bson_t *query
 ) {
 
 	bool retval = false;
 
-	if (collection && query) {
-		bson_error_t error = { 0 };
-		retval = mongoc_collection_count_documents (
-			collection, query, NULL, NULL, NULL, &error
-		);
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				bson_error_t error = { 0 };
+
+				retval = mongoc_collection_count_documents (
+					collection, query, NULL, NULL, NULL, &error
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 	}
@@ -101,7 +130,7 @@ bson_t *mongo_find_generate_opts (
 // returns a cursor (should be destroyed) that can be used to traverse the matching documents
 // query gets destroyed, select list remains the same
 mongoc_cursor_t *mongo_find_all_cursor (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 ) {
@@ -109,19 +138,32 @@ mongoc_cursor_t *mongo_find_all_cursor (
 	mongoc_cursor_t *cursor = NULL;
 	*n_docs = 0;
 
-	if (collection && query) {
-		uint64_t count = mongo_count_docs (collection, bson_copy (query));
-		if (count > 0) {
-			bson_t *opts = mongo_find_generate_opts (select);
-
-			cursor = mongoc_collection_find_with_opts (
-				collection, query, opts, NULL
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
 			);
 
-			*n_docs = count;
+			if (collection) {
+				uint64_t count = mongo_count_docs (collection, bson_copy (query));
+				if (count > 0) {
+					bson_t *opts = mongo_find_generate_opts (select);
 
-			if (opts) bson_destroy (opts);
-			bson_destroy (query);
+					cursor = mongoc_collection_find_with_opts (
+						collection, query, opts, NULL
+					);
+
+					*n_docs = count;
+
+					if (opts) bson_destroy (opts);
+					bson_destroy (query);
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
 		}
 	}
 
@@ -132,16 +174,29 @@ mongoc_cursor_t *mongo_find_all_cursor (
 // uses a query to find all matching docs with the specified options
 // query gets destroyed, options remain the same
 mongoc_cursor_t *mongo_find_all_cursor_with_opts (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const bson_t *opts
 ) {
 
 	mongoc_cursor_t *cursor = NULL;
 
-	if (collection && query) {
-		cursor = mongoc_collection_find_with_opts (
-			collection, query, opts, NULL
-		);
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				cursor = mongoc_collection_find_with_opts (
+					collection, query, opts, NULL
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 
 		bson_destroy (query);
 	}
@@ -150,10 +205,48 @@ mongoc_cursor_t *mongo_find_all_cursor_with_opts (
 
 }
 
+const bson_t **mongo_find_all_internal (
+	mongoc_collection_t *collection,
+	bson_t *query, const CMongoSelect *select,
+	uint64_t *n_docs
+) {
+
+	const bson_t **retval = NULL;
+
+	uint64_t count = mongo_count_docs (collection, bson_copy (query));
+	if (count > 0) {
+		retval = (const bson_t **) calloc (count, sizeof (bson_t *));
+		for (uint64_t i = 0; i < count; i++) retval[i] = bson_new ();
+
+		bson_t *opts = mongo_find_generate_opts (select);
+
+		mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+			collection, query, opts, NULL
+		);
+
+		uint64_t i = 0;
+		const bson_t *doc = NULL;
+		while (mongoc_cursor_next (cursor, &doc)) {
+			// add the matching doc into our retval array
+			bson_copy_to (doc, (bson_t *) retval[i]);
+			i++;
+		}
+
+		*n_docs = count;
+
+		mongoc_cursor_destroy (cursor);
+
+		if (opts) bson_destroy (opts);
+	}
+
+	return retval;
+
+}
+
 // use a query to find all matching documents
 // an empty query will return all the docs in a collection
 const bson_t **mongo_find_all (
-	mongoc_collection_t *collection,
+	const CMongoModel *model,
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 ) {
@@ -161,34 +254,27 @@ const bson_t **mongo_find_all (
 	const bson_t **retval = NULL;
 	*n_docs = 0;
 
-	if (collection && query) {
-		uint64_t count = mongo_count_docs (collection, bson_copy (query));
-		if (count > 0) {
-			retval = (const bson_t **) calloc (count, sizeof (bson_t *));
-			for (uint64_t i = 0; i < count; i++) retval[i] = bson_new ();
-
-			bson_t *opts = mongo_find_generate_opts (select);
-
-			mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
-				collection, query, opts, NULL
+	if (model && query) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
 			);
 
-			uint64_t i = 0;
-			const bson_t *doc = NULL;
-			while (mongoc_cursor_next (cursor, &doc)) {
-				// add the matching doc into our retval array
-				bson_copy_to (doc, (bson_t *) retval[i]);
-				i++;
+			if (collection) {
+				retval = mongo_find_all_internal (
+					collection,
+					query, select,
+					n_docs
+				);
+
+				mongoc_collection_destroy (collection);
 			}
 
-			*n_docs = count;
-
-			mongoc_cursor_destroy (cursor);
-
-			if (opts) bson_destroy (opts);
-
-			bson_destroy (query);
+			mongoc_client_pool_push (mongo.pool, client);
 		}
+
+		bson_destroy (query);
 	}
 
 	return retval;

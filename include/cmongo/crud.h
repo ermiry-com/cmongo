@@ -1,25 +1,24 @@
 #ifndef _CMONGO_CRUD_H_
 #define _CMONGO_CRUD_H_
 
-#include <mongoc/mongoc.h>
 #include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
+#include "cmongo/model.h"
 #include "cmongo/select.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*mongo_parser)(void *model, const bson_t *doc);
-
 // counts the docs in a collection by a matching query
 CMONGO_EXPORT int64_t mongo_count_docs (
-	mongoc_collection_t *collection, bson_t *query
+	const CMongoModel *model, bson_t *query
 );
 
 // returns true if 1 or more documents matches the query, false if no matches
 CMONGO_EXPORT bool mongo_check (
-	mongoc_collection_t *collection, bson_t *query
+	const CMongoModel *model, bson_t *query
 );
 
 // generates an opts doc that can be used to better work with find methods
@@ -34,7 +33,7 @@ CMONGO_EXPORT bson_t *mongo_find_generate_opts (
 // returns a cursor (should be destroyed) that can be used to traverse the matching documents
 // query gets destroyed, select list remains the same
 CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor (
-	mongoc_collection_t *collection, 
+	const CMongoModel *model, 
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 );
@@ -42,14 +41,14 @@ CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor (
 // uses a query to find all matching docs with the specified options
 // query gets destroyed, options remain the same
 CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor_with_opts (
-	mongoc_collection_t *collection, 
+	const CMongoModel *model, 
 	bson_t *query, const bson_t *opts
 );
 
 // use a query to find all matching documents
 // an empty query will return all the docs in a collection
 CMONGO_EXPORT const bson_t **mongo_find_all (
-	mongoc_collection_t *collection, 
+	const CMongoModel *model, 
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
 );
