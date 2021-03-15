@@ -9,6 +9,7 @@
 #include "cmongo/model.h"
 #include "cmongo/mongo.h"
 #include "cmongo/select.h"
+#include "cmongo/types.h"
 
 #ifdef __cplusplus
 #pragma GCC diagnostic push
@@ -223,6 +224,72 @@ mongoc_cursor_t *mongo_find_all_cursor_with_opts (
 
 }
 
+static char *mongo_find_all_cursor_with_opts_to_json_internal (
+	mongoc_cursor_t *cursor,
+	const char *array_name, size_t *json_len
+) {
+
+	char *json = NULL;
+
+	bson_t *doc = bson_new ();
+	if (doc) {
+		char buf[BSON_ARRAY_BUFFER_SIZE] = { 0 };
+		const char *key = NULL;
+		size_t keylen = 0;
+
+		bson_t json_array = BSON_INITIALIZER;
+		(void) bson_append_array_begin (doc, array_name, (int) strlen (array_name), &json_array);
+
+		int i = 0;
+		const bson_t *object_doc = NULL;
+		while (mongoc_cursor_next (cursor, &object_doc)) {
+			keylen = bson_uint32_to_string (i, &key, buf, BSON_ARRAY_BUFFER_SIZE);
+			(void) bson_append_document (&json_array, key, (int) keylen, object_doc);
+
+			bson_destroy ((bson_t *) object_doc);
+
+			i++;
+		}
+
+		(void) bson_append_array_end (doc, &json_array);
+
+		json = bson_as_relaxed_extended_json (doc, json_len);
+	}
+
+	return json;
+
+}
+
+// returns a new string in relaxed extended JSON format
+// with all matching objects inside an array
+// query gets destroyed, opts are kept the same
+// returns 0 on success, 1 on error
+char *mongo_find_all_cursor_with_opts_to_json (
+	const CMongoModel *model,
+	bson_t *query, const bson_t *opts,
+	const char *array_name, size_t *json_len
+) {
+
+	char *json = NULL;
+
+	mongoc_cursor_t *cursor = mongo_find_all_cursor_with_opts (
+		model,
+		query, opts
+	);
+
+	if (cursor) {
+		json = mongo_find_all_cursor_with_opts_to_json_internal (
+			cursor,
+			array_name, json_len
+		);
+
+		mongoc_cursor_destroy (cursor);
+	}
+
+	return json;
+
+}
+
 const bson_t **mongo_find_all_internal (
 	mongoc_collection_t *collection,
 	bson_t *query, const CMongoSelect *select,
@@ -364,6 +431,73 @@ unsigned int mongo_find_one_with_opts (
 					collection,
 					query, opts,
 					output, model->model_parser
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (query);
+	}
+
+	return retval;
+
+}
+
+static unsigned int mongo_find_one_internal_to_json (
+	mongoc_collection_t *collection,
+	bson_t *query, const bson_t *opts,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+		collection, query, opts, NULL
+	);
+
+	if (cursor) {
+		(void) mongoc_cursor_set_limit (cursor, 1);
+
+		const bson_t *doc = NULL;
+		if (mongoc_cursor_next (cursor, &doc)) {
+			*json = bson_as_relaxed_extended_json (doc, json_len);
+			retval = 0;
+		}
+
+		mongoc_cursor_destroy (cursor);
+	}
+
+	return retval;
+
+}
+
+// works like mongo_find_one_with_opts ()
+// creates a new string with the result in relaxed extended JSON format
+// query gets destroyed, opts are kept the same
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one_with_opts_to_json (
+	const CMongoModel *model,
+	bson_t *query, const bson_t *opts,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	if (model && query && json && json_len) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				retval = mongo_find_one_internal_to_json (
+					collection,
+					query, opts,
+					json, json_len
 				);
 
 				mongoc_collection_destroy (collection);
