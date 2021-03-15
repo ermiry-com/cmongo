@@ -55,6 +55,8 @@ typedef struct Mongo {
 
 CMONGO_PRIVATE Mongo mongo;
 
+CMONGO_EXPORT MongoStatus mongo_get_status (void);
+
 CMONGO_EXPORT void mongo_set_db_name (const char *db_name);
 
 CMONGO_EXPORT void mongo_set_host (const char *host);
