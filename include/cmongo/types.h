@@ -5,6 +5,8 @@
 
 #include "cmongo/config.h"
 
+#define BSON_ARRAY_BUFFER_SIZE		16
+
 #ifdef __cplusplus
 extern "C" {
 #endif
