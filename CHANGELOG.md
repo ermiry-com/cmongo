@@ -1,5 +1,3 @@
-- Added custom mongo structure to hold values
-- Added base dedicated model structure & methods
-- Updated CRUD methods to be thread safe
-- Split mongo_count_docs () to be used by other methods
-- Removed mongo_collection_get () wrapper method
+- Added missing mongo_get_status () export
+- Added buffer size definition in types header
+- Added find methods that return result as json
