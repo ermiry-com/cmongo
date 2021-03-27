@@ -16,6 +16,8 @@
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
+#pragma region count
+
 // counts the docs in a collection by a matching query
 static int64_t mongo_count_docs_internal (
 	mongoc_collection_t *collection, bson_t *query
@@ -71,6 +73,10 @@ int64_t mongo_count_docs (
 	return retval;
 
 }
+
+#pragma endregion
+
+#pragma region find
 
 // returns true if 1 or more documents matches the query
 // returns false if no matches
@@ -263,7 +269,6 @@ static char *mongo_find_all_cursor_with_opts_to_json_internal (
 // returns a new string in relaxed extended JSON format
 // with all matching objects inside an array
 // query gets destroyed, opts are kept the same
-// returns 0 on success, 1 on error
 char *mongo_find_all_cursor_with_opts_to_json (
 	const CMongoModel *model,
 	bson_t *query, const bson_t *opts,
@@ -557,6 +562,56 @@ unsigned int mongo_find_one (
 
 }
 
+// returns a new string in relaxed extended JSON format
+// created with the result of an aggregation that represents
+// how a single object's array gets populated
+// pipeline gets destroyed, opts are kept the same
+char *mongo_find_one_populate_array_to_json (
+	const CMongoModel *model,
+	bson_t *pipeline, size_t *json_len
+) {
+
+	char *json = NULL;
+
+	if (model && pipeline && json_len) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+					collection,
+					0, pipeline, NULL, NULL
+				);
+
+				if (cursor) {
+					const bson_t *doc = NULL;
+					if (mongoc_cursor_next (cursor, &doc)) {
+						json = bson_as_relaxed_extended_json (doc, json_len);
+					}
+
+					mongoc_cursor_destroy (cursor);
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (pipeline);
+	}
+
+	return json;
+
+}
+
+#pragma endregion
+
+#pragma region insert
+
 // inserts a document into a collection
 // destroys document
 // returns 0 on success, 1 on error
@@ -628,6 +683,9 @@ unsigned int mongo_insert_many (
 
 }
 
+#pragma endregion
+
+#pragma region update
 
 // updates a doc by a matching query with the new values
 // destroys query and update documents
@@ -705,6 +763,10 @@ unsigned int mongo_update_many (
 
 }
 
+#pragma endregion
+
+#pragma region delete
+
 // deletes one matching document by a query
 // destroys the query document
 // returns 0 on success, 1 on error
@@ -776,6 +838,61 @@ unsigned int mongo_delete_many (
 	return retval;
 
 }
+
+#pragma endregion
+
+#pragma region aggregation
+
+// performs an aggregation in the model's collection
+// returns a cursor with the aggregation's result
+mongoc_cursor_t *mongo_perform_aggregation_with_opts (
+	const CMongoModel *model,
+	mongoc_query_flags_t flags,
+	const bson_t *opts,
+	bson_t *pipeline
+) {
+
+	mongoc_cursor_t *cursor = NULL;
+
+	if (model && pipeline) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				cursor = mongoc_collection_aggregate (
+					collection,
+					flags, pipeline, opts, NULL
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (pipeline);
+	}
+
+	return cursor;
+
+}
+
+// works like mongo_perform_aggregation_with_opts ()
+// but sets flags to 0 and opts to NULL
+mongoc_cursor_t *mongo_perform_aggregation (
+	const CMongoModel *model, bson_t *pipeline
+) {
+
+	return mongo_perform_aggregation_with_opts (
+		model, 0, NULL, pipeline
+	);
+
+}
+
+#pragma endregion
 
 #ifdef __cplusplus
 #pragma GCC diagnostic pop

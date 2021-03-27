@@ -1,3 +1,2 @@
-- Added missing mongo_get_status () export
-- Added buffer size definition in types header
-- Added find methods that return result as json
+- Added methods to perform aggregations
+- Added custom method to populate an object's array into a json
