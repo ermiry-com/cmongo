@@ -12,10 +12,16 @@
 extern "C" {
 #endif
 
+#pragma region count
+
 // counts the docs in a collection by a matching query
 CMONGO_EXPORT int64_t mongo_count_docs (
 	const CMongoModel *model, bson_t *query
 );
+
+#pragma endregion
+
+#pragma region find
 
 // returns true if 1 or more documents matches the query, false if no matches
 CMONGO_EXPORT bool mongo_check (
@@ -99,6 +105,19 @@ CMONGO_EXPORT unsigned int mongo_find_one (
 	void *output
 );
 
+// returns a new string in relaxed extended JSON format
+// created with the result of an aggregation that represents
+// how a single object's array gets populated
+// pipeline gets destroyed, opts are kept the same
+CMONGO_EXPORT char *mongo_find_one_populate_array_to_json (
+	const CMongoModel *model,
+	bson_t *pipeline, size_t *json_len
+);
+
+#pragma endregion
+
+#pragma region insert
+
 // inserts a document into a collection
 // destroys document
 // returns 0 on success, 1 on error
@@ -113,6 +132,10 @@ CMONGO_EXPORT unsigned int mongo_insert_many (
 	const CMongoModel *model,
 	const bson_t **docs, size_t n_docs
 );
+
+#pragma endregion
+
+#pragma region update
 
 // updates a doc by a matching query with the new values
 // destroys query and update documents
@@ -129,6 +152,10 @@ CMONGO_EXPORT unsigned int mongo_update_many (
 	const CMongoModel *model,
 	bson_t *query, bson_t *update
 );
+
+#pragma endregion
+
+#pragma region delete
 
 // deletes one matching document by a query
 // destroys the query document
