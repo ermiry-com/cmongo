@@ -777,6 +777,61 @@ unsigned int mongo_delete_many (
 
 }
 
+#pragma endregion
+
+#pragma region aggregation
+
+// performs an aggregation in the model's collection
+// returns a cursor with the aggregation's result
+mongoc_cursor_t *mongo_perform_aggregation_with_opts (
+	const CMongoModel *model,
+	mongoc_query_flags_t flags,
+	const bson_t *opts,
+	bson_t *pipeline
+) {
+
+	mongoc_cursor_t *cursor = NULL;
+
+	if (model && pipeline) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				cursor = mongoc_collection_aggregate (
+					collection,
+					flags, pipeline, opts, NULL
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (pipeline);
+	}
+
+	return cursor;
+
+}
+
+// works like mongo_perform_aggregation_with_opts ()
+// but sets flags to 0 and opts to NULL
+mongoc_cursor_t *mongo_perform_aggregation (
+	const CMongoModel *model, bson_t *pipeline
+) {
+
+	return mongo_perform_aggregation_with_opts (
+		model, 0, NULL, pipeline
+	);
+
+}
+
+#pragma endregion
+
 #ifdef __cplusplus
 #pragma GCC diagnostic pop
 #endif

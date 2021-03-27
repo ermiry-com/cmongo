@@ -144,6 +144,27 @@ CMONGO_EXPORT unsigned int mongo_delete_many (
 	const CMongoModel *model, bson_t *query
 );
 
+#pragma endregion
+
+#pragma region aggregation
+
+// performs an aggregation in the model's collection
+// returns a cursor with the aggregation's result
+CMONGO_EXPORT mongoc_cursor_t *mongo_perform_aggregation_with_opts (
+	const CMongoModel *model,
+	mongoc_query_flags_t flags,
+	const bson_t *opts,
+	bson_t *pipeline
+);
+
+// works like mongo_perform_aggregation_with_opts ()
+// but sets flags to 0 and opts to NULL
+CMONGO_EXPORT mongoc_cursor_t *mongo_perform_aggregation (
+	const CMongoModel *model, bson_t *pipeline
+);
+
+#pragma endregion
+
 #ifdef __cplusplus
 }
 #endif
