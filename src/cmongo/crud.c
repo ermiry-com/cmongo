@@ -11,6 +11,8 @@
 #include "cmongo/select.h"
 #include "cmongo/types.h"
 
+#define CMONGO_UNWIND_VALUE_SIZE			64
+
 #ifdef __cplusplus
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
@@ -556,6 +558,113 @@ unsigned int mongo_find_one (
 		}
 
 		bson_destroy (query);
+	}
+
+	return retval;
+
+}
+
+static bson_t *mongo_find_one_populate_object_pipeline (
+	const bson_oid_t *oid,
+	const char *from, const char *local_field
+) {
+
+	char unwind[CMONGO_UNWIND_VALUE_SIZE] = { 0 };
+	(void) snprintf (
+		unwind, CMONGO_UNWIND_VALUE_SIZE - 1,
+		"$%s", local_field
+	);
+
+	bson_t *pipeline = BCON_NEW (
+		"pipeline",
+		"[",
+			"{",
+				"$match", "{", "store", BCON_OID (oid), "}",
+			"}",
+			"{",
+				"$lookup", "{",
+					"from", BCON_UTF8 (from),
+					"localField", BCON_UTF8 (local_field),
+					"foreignField", BCON_UTF8 ("_id"),
+					"as", BCON_UTF8 (local_field),
+				"}",
+			"}",
+
+			"{",
+				"$unwind", BCON_UTF8 (unwind),
+			"}",
+		"]"
+	);
+
+	return pipeline;
+
+}
+
+static unsigned int mongo_find_one_aggregate_internal (
+	mongoc_collection_t *collection,
+	const bson_t *pipeline,
+	void *output, const mongo_parser model_parser
+) {
+
+	unsigned int retval = 1;
+
+	mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+		collection, 0, pipeline, NULL, NULL
+	);
+
+	if (cursor) {
+		const bson_t *doc = NULL;
+		if (mongoc_cursor_next (cursor, &doc)) {
+			model_parser (output, doc);
+			retval = 0;
+		}
+
+		mongoc_cursor_destroy (cursor);
+	}
+
+	return retval;
+
+}
+
+// performs an aggregation in the model's collection
+// to match an object by its oid and then lookup & undwind
+// the selected field using its _id
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one_populate_object (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	void *output
+) {
+
+	unsigned int retval = 1;
+
+	if (model && oid && from && local_field) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				bson_t *pipeline = mongo_find_one_populate_object_pipeline (
+					oid, from, local_field
+				);
+
+				if (pipeline) {
+					retval = mongo_find_one_aggregate_internal (
+						collection, pipeline,
+						output, model->model_parser
+					);
+					
+					bson_destroy (pipeline);
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
 	}
 
 	return retval;
