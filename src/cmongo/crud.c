@@ -639,7 +639,7 @@ unsigned int mongo_find_one_populate_object (
 
 	unsigned int retval = 1;
 
-	if (model && oid && from && local_field) {
+	if (model && oid && from && local_field && output) {
 		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
 		if (client) {
 			mongoc_collection_t *collection = mongoc_client_get_collection (
@@ -711,6 +711,77 @@ unsigned int mongo_find_one_populate_object_to_json (
 						retval = 0;
 					}
 
+					bson_destroy (pipeline);
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+	}
+
+	return retval;
+
+}
+
+static inline bson_t *mongo_find_one_populate_array_pipeline (
+	const bson_oid_t *oid,
+	const char *from, const char *local_field
+) {
+
+	bson_t *pipeline = BCON_NEW (
+		"pipeline",
+		"[",
+			"{",
+				"$match", "{", "_id", BCON_OID (oid), "}",
+			"}",
+			"{",
+				"$lookup", "{",
+					"from", BCON_UTF8 (from),
+					"localField", BCON_UTF8 (local_field),
+					"foreignField", BCON_UTF8 ("_id"),
+					"as", BCON_UTF8 (local_field),
+				"}",
+			"}",
+		"]"
+	);
+
+	return pipeline;
+
+}
+
+// performs an aggregation in the model's collection
+// to match an object by its oid and then lookup (populate)
+// the selected array by searching by the object's oids
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one_populate_array (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	void *output
+) {
+
+	unsigned int retval = 1;
+
+	if (model && oid && from && local_field && output) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				bson_t *pipeline = mongo_find_one_populate_array_pipeline (
+					oid, from, local_field
+				);
+
+				if (pipeline) {
+					retval = mongo_find_one_aggregate_internal (
+						collection, pipeline,
+						output, model->model_parser
+					);
+					
 					bson_destroy (pipeline);
 				}
 
