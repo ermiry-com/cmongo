@@ -671,6 +671,55 @@ unsigned int mongo_find_one_populate_object (
 
 }
 
+// works like mongo_find_one_populate_object ()
+// but converts the result into a json string
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one_populate_object_to_json (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	if (model && oid && from && local_field) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+					collection, 0,
+					mongo_find_one_populate_object_pipeline (
+						oid, from, local_field
+					), NULL, NULL
+				);
+
+				if (cursor) {
+					const bson_t *doc = NULL;
+					if (mongoc_cursor_next (cursor, &doc)) {
+						*json = bson_as_relaxed_extended_json (doc, json_len);
+					}
+
+					mongoc_cursor_destroy (cursor);
+
+					retval = 0;
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+	}
+
+	return retval;
+
+}
+
 // returns a new string in relaxed extended JSON format
 // created with the result of an aggregation that represents
 // how a single object's array gets populated
