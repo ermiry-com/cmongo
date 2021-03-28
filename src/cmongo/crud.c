@@ -691,22 +691,27 @@ unsigned int mongo_find_one_populate_object_to_json (
 			);
 
 			if (collection) {
-				mongoc_cursor_t *cursor = mongoc_collection_aggregate (
-					collection, 0,
-					mongo_find_one_populate_object_pipeline (
-						oid, from, local_field
-					), NULL, NULL
+				bson_t *pipeline = mongo_find_one_populate_object_pipeline (
+					oid, from, local_field
 				);
 
-				if (cursor) {
-					const bson_t *doc = NULL;
-					if (mongoc_cursor_next (cursor, &doc)) {
-						*json = bson_as_relaxed_extended_json (doc, json_len);
+				if (pipeline) {
+					mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+						collection, 0, pipeline, NULL, NULL
+					);
+
+					if (cursor) {
+						const bson_t *doc = NULL;
+						if (mongoc_cursor_next (cursor, &doc)) {
+							*json = bson_as_relaxed_extended_json (doc, json_len);
+						}
+
+						mongoc_cursor_destroy (cursor);
+
+						retval = 0;
 					}
 
-					mongoc_cursor_destroy (cursor);
-
-					retval = 0;
+					bson_destroy (pipeline);
 				}
 
 				mongoc_collection_destroy (collection);
