@@ -137,6 +137,16 @@ CMONGO_EXPORT unsigned int mongo_find_one_populate_array (
 	void *output
 );
 
+// works like mongo_find_one_populate_array ()
+// but converts the result into a json string
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_find_one_populate_array_to_json (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	char **json, size_t *json_len
+);
+
 // returns a new string in relaxed extended JSON format
 // created with the result of an aggregation that represents
 // how a single object's array gets populated
