@@ -729,7 +729,7 @@ unsigned int mongo_find_one_populate_object_to_json (
 // created with the result of an aggregation that represents
 // how a single object's array gets populated
 // pipeline gets destroyed, opts are kept the same
-char *mongo_find_one_populate_array_to_json (
+char *mongo_find_one_custom_populate_array_to_json (
 	const CMongoModel *model,
 	bson_t *pipeline, size_t *json_len
 ) {
