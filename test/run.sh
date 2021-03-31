@@ -1,3 +1,5 @@
 #!/bin/bash
 
-LD_LIBRARY_PATH=bin ./test/bin/select || { exit 1; }
+./test/bin/model || { exit 1; }
+
+./test/bin/select || { exit 1; }

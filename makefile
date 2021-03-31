@@ -1,5 +1,9 @@
 TYPE		:= development
 
+COVERAGE	:= 0
+
+DEBUG		:= 0
+
 SLIB		:= libcmongo.so
 
 all: directories $(SLIB)
@@ -21,6 +25,8 @@ MONGOC_INC	:= -I /usr/local/include/libbson-1.0 -I /usr/local/include/libmongoc-
 
 DEFINES		:= -D _GNU_SOURCE
 
+DEVELOPMENT := -D CMONGO_DEBUG
+
 CC          := gcc
 
 GCCVGTEQ8 	:= $(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 8)
@@ -39,9 +45,8 @@ COVDIR		:= coverage
 COVEXT		:= gcov
 
 # common flags
-# -Wconversion
-COMMON		:= -march=native \
-				-Wall -Wno-unknown-pragmas \
+# -Wconversion -march=native
+COMMON		:= -Wall -Wno-unknown-pragmas \
 				-Wfloat-equal -Wdouble-promotion -Wint-to-pointer-cast -Wwrite-strings \
 				-Wtype-limits -Wsign-compare -Wmissing-field-initializers \
 				-Wuninitialized -Wmaybe-uninitialized -Wempty-body \
@@ -52,9 +57,14 @@ COMMON		:= -march=native \
 CFLAGS      := $(DEFINES)
 
 ifeq ($(TYPE), development)
-	CFLAGS += -g -fasynchronous-unwind-tables
+	CFLAGS += -g -fasynchronous-unwind-tables $(DEVELOPMENT)
 else ifeq ($(TYPE), test)
 	CFLAGS += -g -fasynchronous-unwind-tables -D_FORTIFY_SOURCE=2 -fstack-protector -O2
+	ifeq ($(COVERAGE), 1)
+		CFLAGS += -fprofile-arcs -ftest-coverage
+	endif
+else ifeq ($(TYPE), beta)
+	CFLAGS += -g -D_FORTIFY_SOURCE=2 -O2
 else
 	CFLAGS += -D_FORTIFY_SOURCE=2 -O2
 endif
@@ -78,7 +88,9 @@ CFLAGS += -fPIC $(COMMON)
 LIB         := -L /usr/local/lib $(MONGOC)
 
 ifeq ($(TYPE), test)
-	LIB += -lgcov --coverage
+	ifeq ($(COVERAGE), 1)
+		LIB += -lgcov --coverage
+	endif
 endif
 
 INC         := -I $(INCDIR) -I /usr/local/include $(MONGOC_INC)
@@ -114,13 +126,19 @@ TESTCOVDIR	:= $(COVDIR)/test
 TESTFLAGS	:= -g $(DEFINES) -Wall -Wno-unknown-pragmas -Wno-format
 
 ifeq ($(TYPE), test)
-	TESTFLAGS += -fprofile-arcs -ftest-coverage
+	ifeq ($(COVERAGE), 1)
+		TESTFLAGS += -fprofile-arcs -ftest-coverage
+	endif
 endif
 
 TESTLIBS	:= $(PTHREAD) -L ./bin -l cmongo
 
+TESTLIBS += -Wl,-rpath=./$(TARGETDIR) -L ./$(TARGETDIR) -l cmongo
+
 ifeq ($(TYPE), test)
-	TESTLIBS += -lgcov --coverage
+	ifeq ($(COVERAGE), 1)
+		TESTLIBS += -lgcov --coverage
+	endif
 endif
 
 TESTINC		:= -I $(INCDIR) -I ./$(TESTDIR)
@@ -133,6 +151,7 @@ TESTCOVS	:= $(patsubst $(TESTDIR)/%,$(TESTBUILD)/%,$(TESTS:.$(SRCEXT)=.$(SRCEXT)
 test: $(TESTOBJS)
 	@mkdir -p ./$(TESTTARGET)
 	@mkdir -p ./$(TESTTARGET)
+	$(CC) $(TESTINC) ./$(TESTBUILD)/model.o -o ./$(TESTTARGET)/model $(TESTLIBS)
 	$(CC) $(TESTINC) ./$(TESTBUILD)/select.o -o ./$(TESTTARGET)/select $(TESTLIBS)
 	$(CC) $(TESTINC) ./$(TESTBUILD)/version.o -o ./$(TESTTARGET)/version $(TESTLIBS)
 

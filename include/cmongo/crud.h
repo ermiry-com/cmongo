@@ -105,11 +105,53 @@ CMONGO_EXPORT unsigned int mongo_find_one (
 	void *output
 );
 
+// performs an aggregation in the model's collection
+// to match an object by its oid and then lookup & undwind
+// the selected field using its _id
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_find_one_populate_object (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	void *output
+);
+
+// works like mongo_find_one_populate_object ()
+// but converts the result into a json string
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_find_one_populate_object_to_json (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	char **json, size_t *json_len
+);
+
+// performs an aggregation in the model's collection
+// to match an object by its oid and then lookup (populate)
+// the selected array by searching by the object's oids
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_find_one_populate_array (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	void *output
+);
+
+// works like mongo_find_one_populate_array ()
+// but converts the result into a json string
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_find_one_populate_array_to_json (
+	const CMongoModel *model,
+	const bson_oid_t *oid,
+	const char *from, const char *local_field,
+	char **json, size_t *json_len
+);
+
 // returns a new string in relaxed extended JSON format
 // created with the result of an aggregation that represents
 // how a single object's array gets populated
 // pipeline gets destroyed, opts are kept the same
-CMONGO_EXPORT char *mongo_find_one_populate_array_to_json (
+CMONGO_EXPORT char *mongo_find_one_custom_populate_array_to_json (
 	const CMongoModel *model,
 	bson_t *pipeline, size_t *json_len
 );
