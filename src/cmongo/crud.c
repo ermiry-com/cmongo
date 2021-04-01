@@ -1133,6 +1133,7 @@ unsigned int mongo_delete_many (
 #pragma region aggregation
 
 // performs an aggregation in the model's collection
+// the pipeline document gets destroyed
 // returns a cursor with the aggregation's result
 mongoc_cursor_t *mongo_perform_aggregation_with_opts (
 	const CMongoModel *model,
@@ -1178,6 +1179,53 @@ mongoc_cursor_t *mongo_perform_aggregation (
 	return mongo_perform_aggregation_with_opts (
 		model, 0, NULL, pipeline
 	);
+
+}
+
+// works like mongo_perform_aggregation ()
+// but outputs all the aggregation's result into an array
+// returns 0 on success, 1 on error
+unsigned int mongo_perform_aggregation_to_json (
+	const CMongoModel *model, bson_t *pipeline,
+	const char *array_name,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	if (model && pipeline) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+					collection,
+					MONGOC_QUERY_NONE, pipeline, NULL, NULL
+				);
+
+				if (cursor) {
+					*json = mongo_find_all_cursor_with_opts_to_json_internal (
+						cursor, array_name, json_len
+					);
+
+					mongoc_cursor_destroy (cursor);
+
+					retval = 0;
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (pipeline);
+	}
+
+	return retval;
 
 }
 
