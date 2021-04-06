@@ -1183,7 +1183,56 @@ mongoc_cursor_t *mongo_perform_aggregation (
 }
 
 // works like mongo_perform_aggregation ()
+// but outputs all the aggregation's result into an object
+// useful when aggregation returns just one document
+// returns 0 on success, 1 on error
+unsigned int mongo_perform_single_aggregation_to_json (
+	const CMongoModel *model, bson_t *pipeline,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	if (model && pipeline) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+					collection,
+					MONGOC_QUERY_NONE, pipeline, NULL, NULL
+				);
+
+				if (cursor) {
+					const bson_t *doc = NULL;
+					if (mongoc_cursor_next (cursor, &doc)) {
+						*json = bson_as_relaxed_extended_json (doc, json_len);
+					}
+
+					mongoc_cursor_destroy (cursor);
+
+					retval = 0;
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (pipeline);
+	}
+
+	return retval;
+
+}
+
+// works like mongo_perform_aggregation ()
 // but outputs all the aggregation's result into an array
+// useful when aggregation returns many matches
 // returns 0 on success, 1 on error
 unsigned int mongo_perform_aggregation_to_json (
 	const CMongoModel *model, bson_t *pipeline,
