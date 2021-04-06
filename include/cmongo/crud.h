@@ -151,9 +151,11 @@ CMONGO_EXPORT unsigned int mongo_find_one_populate_array_to_json (
 // created with the result of an aggregation that represents
 // how a single object's array gets populated
 // pipeline gets destroyed, opts are kept the same
-CMONGO_EXPORT char *mongo_find_one_custom_populate_array_to_json (
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_find_one_custom_populate_array_to_json (
 	const CMongoModel *model,
-	bson_t *pipeline, size_t *json_len
+	bson_t *pipeline,
+	char **json, size_t *json_len
 );
 
 #pragma endregion

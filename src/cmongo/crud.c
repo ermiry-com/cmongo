@@ -855,12 +855,14 @@ unsigned int mongo_find_one_populate_array_to_json (
 // created with the result of an aggregation that represents
 // how a single object's array gets populated
 // pipeline gets destroyed, opts are kept the same
-char *mongo_find_one_custom_populate_array_to_json (
+// returns 0 on success, 1 on error
+unsigned int mongo_find_one_custom_populate_array_to_json (
 	const CMongoModel *model,
-	bson_t *pipeline, size_t *json_len
+	bson_t *pipeline,
+	char **json, size_t *json_len
 ) {
 
-	char *json = NULL;
+	unsigned int retval = 1;
 
 	if (model && pipeline && json_len) {
 		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
@@ -872,16 +874,18 @@ char *mongo_find_one_custom_populate_array_to_json (
 			if (collection) {
 				mongoc_cursor_t *cursor = mongoc_collection_aggregate (
 					collection,
-					0, pipeline, NULL, NULL
+					MONGOC_QUERY_NONE, pipeline, NULL, NULL
 				);
 
 				if (cursor) {
 					const bson_t *doc = NULL;
 					if (mongoc_cursor_next (cursor, &doc)) {
-						json = bson_as_relaxed_extended_json (doc, json_len);
+						*json = bson_as_relaxed_extended_json (doc, json_len);
 					}
 
 					mongoc_cursor_destroy (cursor);
+
+					retval = 0;
 				}
 
 				mongoc_collection_destroy (collection);
@@ -893,7 +897,7 @@ char *mongo_find_one_custom_populate_array_to_json (
 		bson_destroy (pipeline);
 	}
 
-	return json;
+	return retval;
 
 }
 
