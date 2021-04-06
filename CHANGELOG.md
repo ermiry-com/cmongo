@@ -1,1 +1,2 @@
-- Added mongo_perform_aggregation_to_json ()
+- Added methods to print oids & documents
+- Added mongo_perform_single_aggregation_to_json ()
