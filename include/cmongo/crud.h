@@ -52,17 +52,7 @@ CMONGO_EXPORT mongoc_cursor_t *mongo_find_all_cursor_with_opts (
 	bson_t *query, const bson_t *opts
 );
 
-// returns a new string in relaxed extended JSON format
-// with all matching objects inside an array
-// query gets destroyed, opts are kept the same
-// returns 0 on success, 1 on error
-CMONGO_EXPORT char *mongo_find_all_cursor_with_opts_to_json (
-	const CMongoModel *model,
-	bson_t *query, const bson_t *opts,
-	const char *array_name, size_t *json_len
-);
-
-// works like mongo_find_all_cursor_with_opts_to_json ()
+// works like mongo_find_all_to_json ()
 // but also populates the specified object
 CMONGO_EXPORT unsigned int mongo_find_all_populate_object_to_json (
 	const CMongoModel *model,
@@ -71,7 +61,7 @@ CMONGO_EXPORT unsigned int mongo_find_all_populate_object_to_json (
 	char **json, size_t *json_len
 );
 
-// works like mongo_find_all_cursor_with_opts_to_json ()
+// works like mongo_find_all_to_json ()
 // but also populates the specified objects array
 CMONGO_EXPORT unsigned int mongo_find_all_populate_array_to_json (
 	const CMongoModel *model,
@@ -91,6 +81,16 @@ CMONGO_EXPORT const bson_t **mongo_find_all (
 // correctly destroys an array of docs got from mongo_find_all ()
 CMONGO_EXPORT void mongo_find_all_destroy_docs (
 	bson_t **docs, uint64_t count
+);
+
+// returns a new string in relaxed extended JSON format
+// with all matching objects inside an array
+// query gets destroyed, opts are kept the same
+CMONGO_EXPORT unsigned int mongo_find_all_to_json (
+	const CMongoModel *model,
+	bson_t *query, const bson_t *opts,
+	const char *array_name,
+	char **json, size_t *json_len
 );
 
 // uses a query to find one doc with the specified options
