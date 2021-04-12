@@ -62,6 +62,15 @@ CMONGO_EXPORT char *mongo_find_all_cursor_with_opts_to_json (
 	const char *array_name, size_t *json_len
 );
 
+// works like mongo_find_all_cursor_with_opts_to_json ()
+// but also populates the specified object
+CMONGO_EXPORT unsigned int mongo_find_all_populate_object_to_json (
+	const CMongoModel *model,
+	const char *from, const char *local_field,
+	const char *array_name,
+	char **json, size_t *json_len
+);
+
 // use a query to find all matching documents
 // an empty query will return all the docs in a collection
 CMONGO_EXPORT const bson_t **mongo_find_all (
