@@ -1,2 +1,3 @@
-- Added methods to print oids & documents
-- Added mongo_perform_single_aggregation_to_json ()
+- Refactored mongo_find_one_custom_populate_array_to_json ()
+- Added mongo_find_all_populate_object_to_json ()
+- Added mongo_find_all_populate_array_to_json ()
