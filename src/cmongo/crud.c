@@ -455,7 +455,7 @@ unsigned int mongo_find_all_populate_array_to_json (
 
 }
 
-const bson_t **mongo_find_all_internal (
+static const bson_t **mongo_find_all_internal (
 	mongoc_collection_t *collection,
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
