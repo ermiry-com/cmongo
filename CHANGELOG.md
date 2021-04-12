@@ -1,3 +1,4 @@
-- Refactored mongo_find_one_custom_populate_array_to_json ()
-- Added mongo_find_all_populate_object_to_json ()
-- Added mongo_find_all_populate_array_to_json ()
+- Added missing mongo_find_all_populate_array_to_json export
+- Changed mongo_find_all_internal () to be private
+- Refactored mongo_find_all_to_json () return value
+- Refactored mongo_find_all methods organization

@@ -232,230 +232,7 @@ mongoc_cursor_t *mongo_find_all_cursor_with_opts (
 
 }
 
-static char *mongo_find_all_cursor_with_opts_to_json_internal (
-	mongoc_cursor_t *cursor,
-	const char *array_name, size_t *json_len
-) {
-
-	char *json = NULL;
-
-	bson_t *doc = bson_new ();
-	if (doc) {
-		char buf[BSON_ARRAY_BUFFER_SIZE] = { 0 };
-		const char *key = NULL;
-		size_t keylen = 0;
-
-		bson_t json_array = BSON_INITIALIZER;
-		(void) bson_append_array_begin (doc, array_name, (int) strlen (array_name), &json_array);
-
-		int i = 0;
-		const bson_t *object_doc = NULL;
-		while (mongoc_cursor_next (cursor, &object_doc)) {
-			keylen = bson_uint32_to_string (i, &key, buf, BSON_ARRAY_BUFFER_SIZE);
-			(void) bson_append_document (&json_array, key, (int) keylen, object_doc);
-
-			bson_destroy ((bson_t *) object_doc);
-
-			i++;
-		}
-
-		(void) bson_append_array_end (doc, &json_array);
-
-		json = bson_as_relaxed_extended_json (doc, json_len);
-	}
-
-	return json;
-
-}
-
-// returns a new string in relaxed extended JSON format
-// with all matching objects inside an array
-// query gets destroyed, opts are kept the same
-char *mongo_find_all_cursor_with_opts_to_json (
-	const CMongoModel *model,
-	bson_t *query, const bson_t *opts,
-	const char *array_name, size_t *json_len
-) {
-
-	char *json = NULL;
-
-	mongoc_cursor_t *cursor = mongo_find_all_cursor_with_opts (
-		model,
-		query, opts
-	);
-
-	if (cursor) {
-		json = mongo_find_all_cursor_with_opts_to_json_internal (
-			cursor,
-			array_name, json_len
-		);
-
-		mongoc_cursor_destroy (cursor);
-	}
-
-	return json;
-
-}
-
-static bson_t *mongo_find_all_populate_object_pipeline (
-	const char *from, const char *local_field
-) {
-
-	char unwind[CMONGO_UNWIND_VALUE_SIZE] = { 0 };
-	(void) snprintf (
-		unwind, CMONGO_UNWIND_VALUE_SIZE - 1,
-		"$%s", local_field
-	);
-
-	bson_t *pipeline = BCON_NEW (
-		"pipeline",
-		"[",
-			"{",
-				"$lookup", "{",
-					"from", BCON_UTF8 (from),
-					"localField", BCON_UTF8 (local_field),
-					"foreignField", BCON_UTF8 ("_id"),
-					"as", BCON_UTF8 (local_field),
-				"}",
-			"}",
-
-			"{",
-				"$unwind", BCON_UTF8 (unwind),
-			"}",
-		"]"
-	);
-
-	return pipeline;
-
-}
-
-// works like mongo_find_all_cursor_with_opts_to_json ()
-// but also populates the specified object
-unsigned int mongo_find_all_populate_object_to_json (
-	const CMongoModel *model,
-	const char *from, const char *local_field,
-	const char *array_name,
-	char **json, size_t *json_len
-) {
-
-	unsigned int retval = 1;
-
-	if (model && from && local_field) {
-		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
-		if (client) {
-			mongoc_collection_t *collection = mongoc_client_get_collection (
-				client, mongo.db_name, model->collname
-			);
-
-			if (collection) {
-				bson_t *pipeline = mongo_find_all_populate_object_pipeline (
-					from, local_field
-				);
-
-				if (pipeline) {
-					mongoc_cursor_t *cursor = mongoc_collection_aggregate (
-						collection, 0, pipeline, NULL, NULL
-					);
-
-					if (cursor) {
-						*json = mongo_find_all_cursor_with_opts_to_json_internal (
-							cursor, array_name, json_len
-						);
-
-						mongoc_cursor_destroy (cursor);
-
-						retval = 0;
-					}
-
-					bson_destroy (pipeline);
-				}
-
-				mongoc_collection_destroy (collection);
-			}
-
-			mongoc_client_pool_push (mongo.pool, client);
-		}
-	}
-
-	return retval;
-
-}
-
-static inline bson_t *mongo_find_all_populate_array_pipeline (
-	const char *from, const char *local_field
-) {
-
-	bson_t *pipeline = BCON_NEW (
-		"pipeline",
-		"[",
-			"{",
-				"$lookup", "{",
-					"from", BCON_UTF8 (from),
-					"localField", BCON_UTF8 (local_field),
-					"foreignField", BCON_UTF8 ("_id"),
-					"as", BCON_UTF8 (local_field),
-				"}",
-			"}",
-		"]"
-	);
-
-	return pipeline;
-
-}
-
-// works like mongo_find_all_cursor_with_opts_to_json ()
-// but also populates the specified objects array
-unsigned int mongo_find_all_populate_array_to_json (
-	const CMongoModel *model,
-	const char *from, const char *local_field,
-	const char *array_name,
-	char **json, size_t *json_len
-) {
-
-	unsigned int retval = 1;
-
-	if (model && from && local_field) {
-		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
-		if (client) {
-			mongoc_collection_t *collection = mongoc_client_get_collection (
-				client, mongo.db_name, model->collname
-			);
-
-			if (collection) {
-				bson_t *pipeline = mongo_find_all_populate_array_pipeline (
-					from, local_field
-				);
-
-				if (pipeline) {
-					mongoc_cursor_t *cursor = mongoc_collection_aggregate (
-						collection, 0, pipeline, NULL, NULL
-					);
-
-					if (cursor) {
-						*json = mongo_find_all_cursor_with_opts_to_json_internal (
-							cursor, array_name, json_len
-						);
-
-						mongoc_cursor_destroy (cursor);
-
-						retval = 0;
-					}
-
-					bson_destroy (pipeline);
-				}
-
-				mongoc_collection_destroy (collection);
-			}
-
-			mongoc_client_pool_push (mongo.pool, client);
-		}
-	}
-
-	return retval;
-
-}
-
-const bson_t **mongo_find_all_internal (
+static const bson_t **mongo_find_all_internal (
 	mongoc_collection_t *collection,
 	bson_t *query, const CMongoSelect *select,
 	uint64_t *n_docs
@@ -542,6 +319,232 @@ void mongo_find_all_destroy_docs (
 
 		free (docs);
 	}
+
+}
+
+static char *mongo_find_all_to_json_internal (
+	mongoc_cursor_t *cursor,
+	const char *array_name, size_t *json_len
+) {
+
+	char *json = NULL;
+
+	bson_t *doc = bson_new ();
+	if (doc) {
+		char buf[BSON_ARRAY_BUFFER_SIZE] = { 0 };
+		const char *key = NULL;
+		size_t keylen = 0;
+
+		bson_t json_array = BSON_INITIALIZER;
+		(void) bson_append_array_begin (doc, array_name, (int) strlen (array_name), &json_array);
+
+		int i = 0;
+		const bson_t *object_doc = NULL;
+		while (mongoc_cursor_next (cursor, &object_doc)) {
+			keylen = bson_uint32_to_string (i, &key, buf, BSON_ARRAY_BUFFER_SIZE);
+			(void) bson_append_document (&json_array, key, (int) keylen, object_doc);
+
+			bson_destroy ((bson_t *) object_doc);
+
+			i++;
+		}
+
+		(void) bson_append_array_end (doc, &json_array);
+
+		json = bson_as_relaxed_extended_json (doc, json_len);
+	}
+
+	return json;
+
+}
+
+// returns a new string in relaxed extended JSON format
+// with all matching objects inside an array
+// query gets destroyed, opts are kept the same
+unsigned int mongo_find_all_to_json (
+	const CMongoModel *model,
+	bson_t *query, const bson_t *opts,
+	const char *array_name,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	mongoc_cursor_t *cursor = mongo_find_all_cursor_with_opts (
+		model,
+		query, opts
+	);
+
+	if (cursor) {
+		*json = mongo_find_all_to_json_internal (
+			cursor,
+			array_name, json_len
+		);
+
+		mongoc_cursor_destroy (cursor);
+
+		retval = 0;
+	}
+
+	return retval;
+
+}
+
+static bson_t *mongo_find_all_populate_object_pipeline (
+	const char *from, const char *local_field
+) {
+
+	char unwind[CMONGO_UNWIND_VALUE_SIZE] = { 0 };
+	(void) snprintf (
+		unwind, CMONGO_UNWIND_VALUE_SIZE - 1,
+		"$%s", local_field
+	);
+
+	bson_t *pipeline = BCON_NEW (
+		"pipeline",
+		"[",
+			"{",
+				"$lookup", "{",
+					"from", BCON_UTF8 (from),
+					"localField", BCON_UTF8 (local_field),
+					"foreignField", BCON_UTF8 ("_id"),
+					"as", BCON_UTF8 (local_field),
+				"}",
+			"}",
+
+			"{",
+				"$unwind", BCON_UTF8 (unwind),
+			"}",
+		"]"
+	);
+
+	return pipeline;
+
+}
+
+// works like mongo_find_all_to_json ()
+// but also populates the specified object
+unsigned int mongo_find_all_populate_object_to_json (
+	const CMongoModel *model,
+	const char *from, const char *local_field,
+	const char *array_name,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	if (model && from && local_field) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				bson_t *pipeline = mongo_find_all_populate_object_pipeline (
+					from, local_field
+				);
+
+				if (pipeline) {
+					mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+						collection, 0, pipeline, NULL, NULL
+					);
+
+					if (cursor) {
+						*json = mongo_find_all_to_json_internal (
+							cursor, array_name, json_len
+						);
+
+						mongoc_cursor_destroy (cursor);
+
+						retval = 0;
+					}
+
+					bson_destroy (pipeline);
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+	}
+
+	return retval;
+
+}
+
+static inline bson_t *mongo_find_all_populate_array_pipeline (
+	const char *from, const char *local_field
+) {
+
+	bson_t *pipeline = BCON_NEW (
+		"pipeline",
+		"[",
+			"{",
+				"$lookup", "{",
+					"from", BCON_UTF8 (from),
+					"localField", BCON_UTF8 (local_field),
+					"foreignField", BCON_UTF8 ("_id"),
+					"as", BCON_UTF8 (local_field),
+				"}",
+			"}",
+		"]"
+	);
+
+	return pipeline;
+
+}
+
+// works like mongo_find_all_to_json ()
+// but also populates the specified objects array
+unsigned int mongo_find_all_populate_array_to_json (
+	const CMongoModel *model,
+	const char *from, const char *local_field,
+	const char *array_name,
+	char **json, size_t *json_len
+) {
+
+	unsigned int retval = 1;
+
+	if (model && from && local_field) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				bson_t *pipeline = mongo_find_all_populate_array_pipeline (
+					from, local_field
+				);
+
+				if (pipeline) {
+					mongoc_cursor_t *cursor = mongoc_collection_aggregate (
+						collection, 0, pipeline, NULL, NULL
+					);
+
+					if (cursor) {
+						*json = mongo_find_all_to_json_internal (
+							cursor, array_name, json_len
+						);
+
+						mongoc_cursor_destroy (cursor);
+
+						retval = 0;
+					}
+
+					bson_destroy (pipeline);
+				}
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+	}
+
+	return retval;
 
 }
 
@@ -1417,7 +1420,7 @@ unsigned int mongo_perform_aggregation_to_json (
 				);
 
 				if (cursor) {
-					*json = mongo_find_all_cursor_with_opts_to_json_internal (
+					*json = mongo_find_all_to_json_internal (
 						cursor, array_name, json_len
 					);
 
