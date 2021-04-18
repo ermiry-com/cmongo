@@ -1,1 +1,1 @@
-- Added mongo_find_one_populate_array_with_object_to_json ()
+- Added extra array name when populating array with object
