@@ -1013,13 +1013,13 @@ unsigned int mongo_find_one_populate_array_to_json (
 
 static inline bson_t *mongo_find_one_populate_array_with_object_pipeline (
 	const bson_oid_t *oid,
-	const char *from, const char *local_field
+	const char *from, const char *array_name, const char *local_field
 ) {
 
 	char unwind[CMONGO_UNWIND_VALUE_SIZE] = { 0 };
 	(void) snprintf (
 		unwind, CMONGO_UNWIND_VALUE_SIZE - 1,
-		"$%s", local_field
+		"$%s", array_name
 	);
 
 	bson_t *pipeline = BCON_NEW (
@@ -1053,7 +1053,7 @@ static inline bson_t *mongo_find_one_populate_array_with_object_pipeline (
 unsigned int mongo_find_one_populate_array_with_object_to_json (
 	const CMongoModel *model,
 	const bson_oid_t *oid,
-	const char *from, const char *local_field,
+	const char *from, const char *array_name, const char *local_field,
 	char **json, size_t *json_len
 ) {
 
@@ -1068,7 +1068,7 @@ unsigned int mongo_find_one_populate_array_with_object_to_json (
 
 			if (collection) {
 				bson_t *pipeline = mongo_find_one_populate_array_with_object_pipeline (
-					oid, from, local_field
+					oid, from, array_name, local_field
 				);
 
 				if (pipeline) {

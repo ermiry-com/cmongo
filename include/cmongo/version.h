@@ -3,10 +3,10 @@
 
 #include "cmongo/config.h"
 
-#define CMONGO_VERSION						"1.0b-10"
-#define CMONGO_VERSION_NAME					"Beta 1.0b-10"
+#define CMONGO_VERSION						"1.0b-11"
+#define CMONGO_VERSION_NAME					"Beta 1.0b-11"
 #define CMONGO_VERSION_DATE					"18/04/2021"
-#define CMONGO_VERSION_TIME					"17:00 CST"
+#define CMONGO_VERSION_TIME					"17:14 CST"
 #define CMONGO_VERSION_AUTHOR				"Erick Salas"
 
 #ifdef __cplusplus

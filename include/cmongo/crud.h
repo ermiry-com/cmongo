@@ -172,7 +172,7 @@ CMONGO_EXPORT unsigned int mongo_find_one_populate_array_to_json (
 CMONGO_EXPORT unsigned int mongo_find_one_populate_array_with_object_to_json (
 	const CMongoModel *model,
 	const bson_oid_t *oid,
-	const char *from, const char *local_field,
+	const char *from, const char *array_name, const char *local_field,
 	char **json, size_t *json_len
 );
 
