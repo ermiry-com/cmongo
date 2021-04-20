@@ -1436,9 +1436,43 @@ mongoc_cursor_t *mongo_perform_aggregation (
 
 }
 
-// works like mongo_perform_aggregation ()
-// but outputs all the aggregation's result into an object
-// useful when aggregation returns just one document
+// finds one document by matching id with custom pipeline
+// usefull when trying to perform custom populate methods
+// returns 0 on success, 1 on error
+unsigned int mongo_perform_single_aggregation (
+	const CMongoModel *model, bson_t *pipeline, void *output
+) {
+
+	unsigned int retval = 1;
+
+	if (model && pipeline) {
+		mongoc_client_t *client = mongoc_client_pool_pop (mongo.pool);
+		if (client) {
+			mongoc_collection_t *collection = mongoc_client_get_collection (
+				client, mongo.db_name, model->collname
+			);
+
+			if (collection) {
+				retval = mongo_find_one_aggregate_internal (
+					collection, pipeline,
+					output, model->model_parser
+				);
+
+				mongoc_collection_destroy (collection);
+			}
+
+			mongoc_client_pool_push (mongo.pool, client);
+		}
+
+		bson_destroy (pipeline);
+	}
+
+	return retval;
+
+}
+
+// works like mongo_perform_single_aggregation_to_json ()
+// but outputs the result directly into a json string
 // returns 0 on success, 1 on error
 unsigned int mongo_perform_single_aggregation_to_json (
 	const CMongoModel *model, bson_t *pipeline,
