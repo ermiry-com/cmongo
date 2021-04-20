@@ -264,9 +264,15 @@ CMONGO_EXPORT mongoc_cursor_t *mongo_perform_aggregation (
 	const CMongoModel *model, bson_t *pipeline
 );
 
-// works like mongo_perform_aggregation ()
-// but outputs all the aggregation's result into an object
-// useful when aggregation returns just one document
+// finds one document by matching id with custom pipeline
+// usefull when trying to perform custom populate methods
+// returns 0 on success, 1 on error
+CMONGO_EXPORT unsigned int mongo_perform_single_aggregation (
+	const CMongoModel *model, bson_t *pipeline, void *output
+);
+
+// works like mongo_perform_single_aggregation_to_json ()
+// but outputs the result directly into a json string
 // returns 0 on success, 1 on error
 CMONGO_EXPORT unsigned int mongo_perform_single_aggregation_to_json (
 	const CMongoModel *model, bson_t *pipeline,
