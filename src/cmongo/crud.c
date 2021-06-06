@@ -25,22 +25,29 @@ static int64_t mongo_count_docs_internal (
 	mongoc_collection_t *collection, bson_t *query
 ) {
 
-	int64_t retval = 0;
+	int64_t count = 0;
 
+	#ifdef CMONGO_DEBUG
 	bson_error_t error = { 0 };
-	retval = mongoc_collection_count_documents (
+
+	count = mongoc_collection_count_documents (
 		collection, query, NULL, NULL, NULL, &error
 	);
 
-	if (retval < 0) {
+	if (count < 0) {
 		(void) fprintf (
-			stderr, "[MONGO][ERROR]: %s", error.message
+			stderr, "[MONGO][ERROR]: %s\n", error.message
 		);
 
-		retval = 0;
+		count = 0;
 	}
+	#else
+	count = mongoc_collection_count_documents (
+		collection, query, NULL, NULL, NULL, NULL
+	);
+	#endif
 
-	return retval;
+	return count;
 
 }
 
@@ -96,11 +103,9 @@ bool mongo_check (
 			);
 
 			if (collection) {
-				bson_error_t error = { 0 };
-
-				retval = mongoc_collection_count_documents (
-					collection, query, NULL, NULL, NULL, &error
-				);
+				if (mongo_count_docs_internal (collection, query) > 0) {
+					retval = true;
+				}
 
 				mongoc_collection_destroy (collection);
 			}
