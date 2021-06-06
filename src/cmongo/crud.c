@@ -175,8 +175,8 @@ mongoc_cursor_t *mongo_find_all_cursor (
 			);
 
 			if (collection) {
-				uint64_t count = mongo_count_docs_internal (
-					collection, bson_copy (query)
+				uint64_t count = (uint64_t) mongo_count_docs_internal (
+					collection, query
 				);
 
 				if (count > 0) {
@@ -245,7 +245,7 @@ static const bson_t **mongo_find_all_internal (
 
 	const bson_t **retval = NULL;
 
-	uint64_t count = mongo_count_docs_internal (collection, bson_copy (query));
+	uint64_t count = (uint64_t) mongo_count_docs_internal (collection, query);
 	if (count > 0) {
 		retval = (const bson_t **) calloc (count, sizeof (bson_t *));
 		for (uint64_t i = 0; i < count; i++) retval[i] = bson_new ();
