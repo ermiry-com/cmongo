@@ -1177,11 +1177,27 @@ unsigned int mongo_insert_one (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_insert_one (
+				if (mongoc_collection_insert_one (
 					collection, doc, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_insert_one (
+					collection, doc, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1214,11 +1230,27 @@ unsigned int mongo_insert_many (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_insert_many (
+				if (mongoc_collection_insert_many (
 					collection, docs, n_docs, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_insert_many (
+					collection, docs, n_docs, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1253,11 +1285,27 @@ unsigned int mongo_update_one (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_update_one (
+				if (mongoc_collection_update_one (
 					collection, query, update, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_update_one (
+					collection, query, update, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1291,11 +1339,27 @@ unsigned int mongo_update_many (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_update_many (
+				if (mongoc_collection_update_many (
 					collection, query, update, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_update_many (
+					collection, query, update, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1332,11 +1396,27 @@ unsigned int mongo_delete_one (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_delete_one (
+				if (mongoc_collection_delete_one (
 					collection, query, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_delete_one (
+					collection, query, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1368,11 +1448,27 @@ unsigned int mongo_delete_many (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_delete_many (
+				if (mongoc_collection_delete_many (
 					collection, query, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_delete_many (
+					collection, query, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
