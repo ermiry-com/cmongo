@@ -1,1 +1,3 @@
-- Added mongo_perform_single_aggregation ()
+- Refactored mongo_count_docs_internal ()
+- Removed bson_copy (query) in find all methods
+- Refactored crud methods to print errors in dev

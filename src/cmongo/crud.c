@@ -25,22 +25,29 @@ static int64_t mongo_count_docs_internal (
 	mongoc_collection_t *collection, bson_t *query
 ) {
 
-	int64_t retval = 0;
+	int64_t count = 0;
 
+	#ifdef CMONGO_DEBUG
 	bson_error_t error = { 0 };
-	retval = mongoc_collection_count_documents (
+
+	count = mongoc_collection_count_documents (
 		collection, query, NULL, NULL, NULL, &error
 	);
 
-	if (retval < 0) {
+	if (count < 0) {
 		(void) fprintf (
-			stderr, "[MONGO][ERROR]: %s", error.message
+			stderr, "[MONGO][ERROR]: %s\n", error.message
 		);
 
-		retval = 0;
+		count = 0;
 	}
+	#else
+	count = mongoc_collection_count_documents (
+		collection, query, NULL, NULL, NULL, NULL
+	);
+	#endif
 
-	return retval;
+	return count;
 
 }
 
@@ -96,11 +103,9 @@ bool mongo_check (
 			);
 
 			if (collection) {
-				bson_error_t error = { 0 };
-
-				retval = mongoc_collection_count_documents (
-					collection, query, NULL, NULL, NULL, &error
-				);
+				if (mongo_count_docs_internal (collection, query) > 0) {
+					retval = true;
+				}
 
 				mongoc_collection_destroy (collection);
 			}
@@ -170,8 +175,8 @@ mongoc_cursor_t *mongo_find_all_cursor (
 			);
 
 			if (collection) {
-				uint64_t count = mongo_count_docs_internal (
-					collection, bson_copy (query)
+				uint64_t count = (uint64_t) mongo_count_docs_internal (
+					collection, query
 				);
 
 				if (count > 0) {
@@ -240,7 +245,7 @@ static const bson_t **mongo_find_all_internal (
 
 	const bson_t **retval = NULL;
 
-	uint64_t count = mongo_count_docs_internal (collection, bson_copy (query));
+	uint64_t count = (uint64_t) mongo_count_docs_internal (collection, query);
 	if (count > 0) {
 		retval = (const bson_t **) calloc (count, sizeof (bson_t *));
 		for (uint64_t i = 0; i < count; i++) retval[i] = bson_new ();
@@ -1172,11 +1177,27 @@ unsigned int mongo_insert_one (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_insert_one (
+				if (mongoc_collection_insert_one (
 					collection, doc, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_insert_one (
+					collection, doc, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1209,11 +1230,27 @@ unsigned int mongo_insert_many (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_insert_many (
+				if (mongoc_collection_insert_many (
 					collection, docs, n_docs, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_insert_many (
+					collection, docs, n_docs, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1248,11 +1285,27 @@ unsigned int mongo_update_one (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_update_one (
+				if (mongoc_collection_update_one (
 					collection, query, update, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_update_one (
+					collection, query, update, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1286,11 +1339,27 @@ unsigned int mongo_update_many (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_update_many (
+				if (mongoc_collection_update_many (
 					collection, query, update, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_update_many (
+					collection, query, update, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1327,11 +1396,27 @@ unsigned int mongo_delete_one (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_delete_one (
+				if (mongoc_collection_delete_one (
 					collection, query, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_delete_one (
+					collection, query, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
@@ -1363,11 +1448,27 @@ unsigned int mongo_delete_many (
 			);
 
 			if (collection) {
+				#ifdef CMONGO_DEBUG
 				bson_error_t error = { 0 };
 
-				retval = mongoc_collection_delete_many (
+				if (mongoc_collection_delete_many (
 					collection, query, NULL, NULL, &error
-				) ? 0 : 1;
+				)) {
+					retval = 0;
+				}
+
+				else {
+					(void) fprintf (
+						stderr, "[MONGO][ERROR]: %s\n", error.message
+					);
+				}
+				#else
+				if (mongoc_collection_delete_many (
+					collection, query, NULL, NULL, NULL
+				)) {
+					retval = 0;
+				}
+				#endif
 
 				mongoc_collection_destroy (collection);
 			}
