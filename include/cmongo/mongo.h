@@ -4,13 +4,21 @@
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
+#include "cmongo/config.h"
+
+#define CMONGO_DB_NAME_SIZE				128
+#define CMONGO_HOST_SIZE				128
+
+#define CMONGO_USERNAME_SIZE			128
+#define CMONGO_PASSWORD_SIZE			128
+
+#define CMONGO_APP_NAME_SIZE			128
+
+#define CMONGO_URI_SIZE					1024
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern mongoc_client_t *client;
-
-extern char *db_name;
 
 typedef enum MongoStatus {
 
@@ -19,37 +27,65 @@ typedef enum MongoStatus {
 
 } MongoStatus;
 
-extern MongoStatus mongo_get_status (void);
+typedef struct Mongo {
 
-extern void mongo_set_host (const char *h);
+	MongoStatus status;
 
-extern void mongo_set_port (const char *p);
+	size_t db_name_len;
+	char db_name[CMONGO_DB_NAME_SIZE];
 
-extern void mongo_set_username (const char *u);
+	size_t host_len;
+	char host[CMONGO_HOST_SIZE];
+	unsigned int port;
 
-extern void mongo_set_password (const char *pswd);
+	size_t username_len;
+	char username[CMONGO_USERNAME_SIZE];
+	size_t password_len;
+	char password[CMONGO_PASSWORD_SIZE];
 
-extern void mongo_set_db_name (const char *name);
+	size_t app_name_len;
+	char app_name[CMONGO_APP_NAME_SIZE];
 
-extern void mongo_set_app_name (const char *name);
+	size_t uri_len;
+	char uri[CMONGO_URI_SIZE];
 
-extern void mongo_set_uri (const char *uri);
+	mongoc_client_pool_t *pool;
 
-// generates a new uri string with the set values (username, password, host, port & db name)
+} Mongo;
+
+CMONGO_PRIVATE Mongo mongo;
+
+CMONGO_EXPORT MongoStatus mongo_get_status (void);
+
+CMONGO_EXPORT void mongo_set_db_name (const char *db_name);
+
+CMONGO_EXPORT void mongo_set_host (const char *host);
+
+CMONGO_EXPORT void mongo_set_port (const unsigned int port);
+
+CMONGO_EXPORT void mongo_set_username (const char *username);
+
+CMONGO_EXPORT void mongo_set_password (const char *pswd);
+
+CMONGO_EXPORT void mongo_set_app_name (const char *app_name);
+
+CMONGO_EXPORT void mongo_set_uri (const char *uri);
+
+// generates a new uri string with the set values
+// (username, password, host, port & db name)
 // that can be used to set as the uri for a new connection
-// returns the newly uri string (that should be freed) on success
-// returns NULL on error
-extern char *mongo_uri_generate (void);
+// returns 0 on success 1 on error
+CMONGO_EXPORT unsigned int mongo_uri_generate (void);
+
+// connect to the mongo db with db name
+CMONGO_EXPORT unsigned int mongo_connect (void);
 
 // pings the db to test for a success connection
 // returns 0 on success, 1 on error
-extern int mongo_ping_db (void);
-
-// connect to the mongo db with db name
-extern int mongo_connect (void);
+CMONGO_EXPORT unsigned int mongo_ping_db (void);
 
 // disconnects from the db
-extern void mongo_disconnect (void);
+CMONGO_EXPORT void mongo_disconnect (void);
 
 #ifdef __cplusplus
 }
